@@ -23,7 +23,7 @@ perf: $(TARGET)
 $(TARGET): $(OBJS)
 	$(LINK.cc) -o $@ $^
 
-$(TARGET_TESTS): $(OBJS_TESTS)
+$(TARGET_TESTS): $(OBJS) $(OBJS_TESTS)
 	$(LINK.cc) -o $@ $^ -lcriterion
 
 clean:
