@@ -39,7 +39,7 @@ std::ostream& operator<<(std::ostream& os, Matrix& m)
     {
         os << m(r, 0);
         for (unsigned c = 1; c < m.get_cols(); c++)
-            os << " " << m(r, c);
+            os << "\t" << m(r, c);
         os << std::endl;
     }
     return os;

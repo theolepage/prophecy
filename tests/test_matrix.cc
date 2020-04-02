@@ -8,7 +8,9 @@ Test(test_matrix, simple_get)
     Matrix m(2, 2);
     m.fill_sequence();
 
-    // std::cout << m;
+    // Matrix m2(8, 8);
+    // m2.fill_sequence();
+    // std::cout << m2;
 
     cr_assert_eq(m(0, 0), 0);
     cr_assert_eq(m(0, 1), 1);
