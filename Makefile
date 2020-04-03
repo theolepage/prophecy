@@ -1,30 +1,25 @@
-CXX=g++
-CXXFLAGS=-std=c++17 -Wall -Wextra -pedantic -Werror -g -fsanitize=address
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -Werror
 
-SRC= \
-    src/matrix.cc   \
+OBJS = $(addprefix src/, matrix.o)
+OBJS_TESTS = $(addprefix tests/, test_matrix.o)
 
-SRC_TESTS= \
-    tests/test_matrix.cc
+TARGET = prophecy
+TARGET_TESTS = test
 
-OBJS=$(SRC:.cc=.o)
-OBJS_TESTS=$(SRC_TESTS:.cc=.o)
+all: $(TARGET)
 
-TARGET=prophecy
-TARGET_TESTS=test
-
-all: perf
-
-debug: CXXFLAGS+= -g
+debug: CXXFLAGS+= -g -fsanitize-address
 debug: $(TARGET)
 
-perf: $(TARGET)
-
 $(TARGET): $(OBJS)
-	$(LINK.cc) -o $@ $^
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
+check: $(TARGET_TESTS)
+	@echo; ./$(TARGET_TESTS)
 
 $(TARGET_TESTS): $(OBJS) $(OBJS_TESTS)
-	$(LINK.cc) -o $@ $^ -lcriterion
+	$(CXX) $(CXXFLAGS) -lcriterion $^ -o $@
 
 clean:
 	$(RM) $(TARGET) $(OBJS) $(TARGET_TESTS) $(OBJS_TESTS)
