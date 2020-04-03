@@ -13,12 +13,14 @@ public:
 
     Model& add(Layer layer);
 
-    Matrix predict(Matrix x);
+    void compile(double learning_rate);
 
     void train(std::vector<Matrix> x,
             std::vector<Matrix y,
             unsigned epoch,
             unsigned batch_size);
+
+    Matrix predict(Matrix x);
 
     double evaluate(std::vector<Matrix> x, std::vector<Matrix> y);
 
@@ -28,9 +30,7 @@ public:
 
     void load(std::string path);
 
-    void compile(double learning_rate);
-
 private:
-    std::vector<Layer> layers_;
     bool compiled_;
+    std::vector<Layer> layers_;
 };

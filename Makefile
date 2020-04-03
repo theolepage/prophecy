@@ -24,4 +24,4 @@ $(TARGET_TESTS): $(OBJS) $(OBJS_TESTS)
 clean:
 	$(RM) $(TARGET) $(OBJS) $(TARGET_TESTS) $(OBJS_TESTS)
 
-.PHONY: all clean
+.PHONY: all check clean
