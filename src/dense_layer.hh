@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <functional>
 
 #include "layer.hh"
@@ -9,13 +10,15 @@
 class DenseLayer : public Layer
 {
 public:
-    DenseLayer(unsigned nb_neurons, ActivationFunction activation)
-        : Layer(nb_neurons)
-        , activation_(activation)
-    {}
+    DenseLayer(unsigned nb_neurons, ActivationFunction *activation);
+
+    void compile(Layer prev);
+
+    Matrix compute_activations(const Matrix& input);
 
 private:
-    Matrix weights_;
-    Matrix biases_;
-    ActivationFunction activation_;
+    bool compiled_;
+    std::shared_ptr<Matrix> weights_;
+    std::shared_ptr<Matrix> biases_;
+    ActivationFunction *activation_;
 };

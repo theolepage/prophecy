@@ -33,4 +33,5 @@ public:
 private:
     bool compiled_;
     std::vector<Layer> layers_;
+    double learning_rate_;
 };

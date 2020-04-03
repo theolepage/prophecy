@@ -1,15 +1,16 @@
 #pragma once
 
+#include <functional>
+
 class ActivationFunction
 {
 public:
-    virtual double function(double x) = 0;
-    virtual double derivative_function(double x) = 0;
+    std::function<double(double)> function_;
+    std::function<double(double)> derivative_function_;
 };
 
 class SigmoidActivationFunction : public ActivationFunction
 {
 public:
-    double function(double x);
-    double derivative_function(double x);
+    SigmoidActivationFunction();
 };
