@@ -71,6 +71,14 @@ void Matrix::fill_sequence()
         data_[i] = i;
 }
 
+Matrix& Matrix::map(std::function<double(double)> func)
+{
+    for (unsigned r = 0; r < rows_; r++)
+        for (unsigned c = 0; c < cols_; c++)
+            data_[r * cols_ + c] = func(data_[r * cols_ + c]);
+    return *this;
+}
+
 Matrix Matrix::multiply(const Matrix& a, const Matrix& b)
 {
     if (a.rows_ != b.rows_ || a.cols_ != b.cols_)
@@ -88,8 +96,8 @@ Matrix& Matrix::operator+=(const Matrix& m)
     if (m.rows_ != rows_ || m.cols_ != cols_)
         throw "Invalid matrix shape";
 
-    for (unsigned r = 0; r < m.rows_; r++)
-        for (unsigned c = 0; c < m.cols_; c++)
+    for (unsigned r = 0; r < rows_; r++)
+        for (unsigned c = 0; c < cols_; c++)
             data_[r * cols_ + c] += m.data_[r * cols_ + c];
     return *this;
 }
@@ -105,8 +113,8 @@ Matrix& Matrix::operator-=(const Matrix& m)
     if (m.rows_ != rows_ || m.cols_ != cols_)
         throw "Invalid matrix shape";
 
-    for (unsigned r = 0; r < m.rows_; r++)
-        for (unsigned c = 0; c < m.cols_; c++)
+    for (unsigned r = 0; r < rows_; r++)
+        for (unsigned c = 0; c < cols_; c++)
             data_[r * cols_ + c] -= m.data_[r * cols_ + c];
     return *this;
 }

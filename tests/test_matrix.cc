@@ -36,6 +36,20 @@ Test(test_matrix, simple_transpose)
     cr_assert_eq(res(2, 2), 8);
 }
 
+Test(test_matrix, simple_map)
+{
+    Matrix m(2, 2);
+    m.fill_sequence();
+
+    std::function<double(double)> f = [](double x) { return 2 * x; };
+    m.map(f);
+
+    cr_assert_eq(m(0, 0), 0);
+    cr_assert_eq(m(0, 1), 2);
+    cr_assert_eq(m(1, 0), 4);
+    cr_assert_eq(m(1, 1), 6);
+}
+
 Test(test_matrix, simple_addition)
 {
     Matrix a(2, 2);
