@@ -5,7 +5,7 @@
 class InputLayer : public Layer
 {
 public:
-    InputLayer(nb_neurons)
+    InputLayer(double nb_neurons)
         : Layer(nb_neurons)
     {}
 };

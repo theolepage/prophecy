@@ -1,18 +1,15 @@
 #pragma once
 
+#include <memory>
+
 #include "matrix.hh"
 
 class Layer
 {
 public:
-    Layer(unsigned nb_neurons)
-        : nb_neurons_(nb_neurons)
-    {}
+    Layer(unsigned nb_neurons);
 
-    unsigned get_nb_neurons()
-    {
-        return nb_neurons_;
-    }
+    unsigned get_nb_neurons();
 
 protected:
     unsigned nb_neurons_;

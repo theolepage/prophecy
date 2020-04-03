@@ -12,13 +12,24 @@ class DenseLayer : public Layer
 public:
     DenseLayer(unsigned nb_neurons, ActivationFunction *activation);
 
-    void compile(Layer prev);
+    Matrix feedforward(const Matrix& input, bool training);
 
-    Matrix compute_activations(const Matrix& input);
+    void backpropagation();
+    void backpropagation(const Matrix& y);
+
+    void compile(std::shared_ptr<Layer> prev,
+                 std::shared_ptr<Layer> next);
 
 private:
     bool compiled_;
+
     std::shared_ptr<Matrix> weights_;
     std::shared_ptr<Matrix> biases_;
+    std::shared_ptr<Matrix> delta_weights_;
+    std::shared_ptr<Matrix> delta_biases_;
+
+    std::shared_ptr<Layer> prev_;
+    std::shared_ptr<Layer> next_;
+
     ActivationFunction *activation_;
 };

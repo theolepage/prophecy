@@ -1,7 +1,11 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -Werror
 
-OBJS = $(addprefix src/, matrix.o dense_layer.o activation_function.o)
+OBJS = $(addprefix src/, matrix.o               \
+                         model.o                \
+                         layer.o                \
+                         dense_layer.o          \
+                         activation_function.o)
 OBJS_TESTS = $(addprefix tests/, test_matrix.o)
 
 TARGET = prophecy
@@ -9,7 +13,7 @@ TARGET_TESTS = test
 
 all: $(TARGET)
 
-debug: CXXFLAGS+= -g -fsanitize-address
+debug: CXXFLAGS+= -g -fsanitize=address
 debug: $(TARGET)
 
 $(TARGET): $(OBJS)
