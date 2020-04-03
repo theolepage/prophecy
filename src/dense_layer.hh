@@ -4,11 +4,12 @@
 
 #include "layer.hh"
 #include "matrix.hh"
+#include "activation_function.hh"
 
 class DenseLayer : public Layer
 {
 public:
-    DenseLayer(nb_neurons, activation)
+    DenseLayer(unsigned nb_neurons, ActivationFunction activation)
         : Layer(nb_neurons)
         , activation_(activation)
     {}
@@ -16,5 +17,5 @@ public:
 private:
     Matrix weights_;
     Matrix biases_;
-    std::function<double(double)> activation_;
+    ActivationFunction activation_;
 };
