@@ -6,11 +6,13 @@ Check this out Google.
 
 ### Dense layers
 
-- [ ] Implement backpropagation() and update()
+- [ ] Test current framework with a XOR
 - [ ] Clean code
-- [ ] Write tests and update docs
+- [ ] Write tests
+- [ ] Update docs
 
 ### Next features
 
+- [ ] Implement Model::load(), Model::save() and Dataset class
 - [ ] Implement convolutional layers (and dropout, max pooling, ...)
-- [ ] Optimize our computations
+- [ ] Optimize computations

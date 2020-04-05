@@ -1,24 +1,25 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "dense_layer.hh"
 #include "input_layer.hh"
+#include "hidden_layer.hh"
 
 class Model
 {
 public:
     Model();
 
-    Model& add(Layer layer);
+    Model& add(std::shared_ptr<InputLayer> layer);
+    Model& add(std::shared_ptr<HiddenLayer> layer);
 
-    Matrix predict(Matrix x);
-    double evaluate(std::vector<Matrix> x, std::vector<Matrix> y);
+    std::shared_ptr<Matrix> predict(std::shared_ptr<Matrix> x);
 
     void compile(double learning_rate);
-    void train(std::vector<Matrix> x,
-               std::vector<Matrix> y,
+    void train(std::vector<std::shared_ptr<Matrix>> x,
+               std::vector<std::shared_ptr<Matrix>> y,
                unsigned epochs,
                unsigned batch_size);
 
@@ -28,6 +29,8 @@ public:
 
 private:
     bool compiled_;
-    std::vector<Layer> layers_;
     double learning_rate_;
+
+    std::shared_ptr<InputLayer> input_;
+    std::vector<std::shared_ptr<HiddenLayer>> layers_;
 };

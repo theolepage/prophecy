@@ -4,11 +4,11 @@
 
 SigmoidActivationFunction::SigmoidActivationFunction()
 {
-    function_ = [](double x) {
+    f_ = [](double x) {
         return 1 / (1 + exp(-x));
     };
 
-    derivative_function_ = [this](double x) {
-        return function_(x) * (1 - function_(x));
+    fd_ = [this](double x) {
+        return f_(x) * (1 - f_(x));
     };
 }
