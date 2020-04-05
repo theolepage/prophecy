@@ -14,6 +14,7 @@ public:
 
     void update(double learning_rate);
 
-    void compile(std::shared_ptr<HiddenLayer> prev,
+    void compile(unsigned prev_nb_neurons,
+                 std::shared_ptr<HiddenLayer> prev,
                  std::shared_ptr<HiddenLayer> next);
 };

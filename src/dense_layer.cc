@@ -7,13 +7,14 @@ DenseLayer::DenseLayer(unsigned nb_neurons,
         : HiddenLayer(nb_neurons, activation)
 {}
 
-void DenseLayer::compile(std::shared_ptr<HiddenLayer> prev,
+void DenseLayer::compile(unsigned prev_nb_neurons,
+                         std::shared_ptr<HiddenLayer> prev,
                          std::shared_ptr<HiddenLayer> next)
 {
     // Initialize weights and biases
-    weights_ = std::make_shared<Matrix>(nb_neurons_, prev->get_nb_neurons());
+    weights_ = std::make_shared<Matrix>(get_nb_neurons(), prev_nb_neurons);
     weights_->fill_random();
-    biases_ = std::make_shared<Matrix>(nb_neurons_, 1);
+    biases_ = std::make_shared<Matrix>(get_nb_neurons(), 1);
     biases_->fill_random();
 
     compiled_ = true;

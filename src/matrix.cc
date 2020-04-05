@@ -61,6 +61,7 @@ Matrix Matrix::transpose()
 
 void Matrix::fill_random()
 {
+    srand (time(NULL));
     for (unsigned i = 0; i < rows_ * cols_; i++)
         data_[i] = (std::rand() / (double)RAND_MAX) * 2 - 1;
 }

@@ -22,7 +22,8 @@ public:
 
     virtual void update(double learning_rate) = 0;
 
-    virtual void compile(std::shared_ptr<HiddenLayer> prev,
+    virtual void compile(unsigned prev_nb_neurons,
+                         std::shared_ptr<HiddenLayer> prev,
                          std::shared_ptr<HiddenLayer> next) = 0;
 
 protected:

@@ -26,11 +26,11 @@ void Model::compile(double learning_rate)
     if (layers_.size() >= 2)
     {
         unsigned last = layers_.size() - 1;
-        layers_[0]->compile(nullptr, layers_[1]);
-        layers_[last]->compile(layers_[last - 1], nullptr);
+        layers_[0]->compile(input_->get_nb_neurons(), nullptr, layers_[1]);
+        layers_[last]->compile(layers_[last - 1]->get_nb_neurons(), layers_[last - 1], nullptr);
     }
     for (unsigned i = 1; i < layers_.size() - 1; i++)
-        layers_[i]->compile(layers_[i - 1], layers_[i]);
+        layers_[i]->compile(layers_[i - 1]->get_nb_neurons(), layers_[i - 1], layers_[i]);
 }
 
 void Model::train(std::vector<std::shared_ptr<Matrix>> x,
@@ -51,7 +51,7 @@ void Model::train(std::vector<std::shared_ptr<Matrix>> x,
             // For each batch, compute delta weights and biases
             for (unsigned k = 0; k < batch_size && i < x.size(); k++)
             {
-                layers_[1]->feedforward(x[i], true);
+                layers_[0]->feedforward(x[i], true);
                 layers_[layers_.size() - 1]->backpropagation(y[i]);
                 i += 1;
             }
@@ -65,5 +65,5 @@ void Model::train(std::vector<std::shared_ptr<Matrix>> x,
 
 std::shared_ptr<Matrix> Model::predict(std::shared_ptr<Matrix> input)
 {
-    return layers_[1]->feedforward(input, false);
+    return layers_[0]->feedforward(input, false);
 }

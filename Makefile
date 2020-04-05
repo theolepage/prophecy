@@ -1,7 +1,8 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -Werror
 
-OBJS = $(addprefix src/, matrix.o               \
+OBJS = $(addprefix src/, main.o                 \
+                         matrix.o               \
                          model.o                \
                          layer.o                \
                          hidden_layer.o         \
@@ -14,7 +15,7 @@ TARGET_TESTS = test
 
 all: $(TARGET)
 
-debug: CXXFLAGS+= -g -fsanitize=address
+debug: CXXFLAGS+= -g #-fsanitize=address
 debug: $(TARGET)
 
 $(TARGET): $(OBJS)
