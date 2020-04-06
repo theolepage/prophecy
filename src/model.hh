@@ -18,8 +18,8 @@ public:
     std::shared_ptr<Matrix> predict(std::shared_ptr<Matrix> x);
 
     void compile(double learning_rate);
-    void train(std::vector<std::shared_ptr<Matrix>> x,
-               std::vector<std::shared_ptr<Matrix>> y,
+    void train(std::shared_ptr<std::vector<std::shared_ptr<Matrix>>> x,
+               std::shared_ptr<std::vector<std::shared_ptr<Matrix>>> y,
                unsigned epochs,
                unsigned batch_size);
 

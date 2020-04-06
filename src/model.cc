@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cmath>
 
 #include "model.hh"
@@ -33,8 +34,8 @@ void Model::compile(double learning_rate)
         layers_[i]->compile(layers_[i - 1]->get_nb_neurons(), layers_[i - 1], layers_[i]);
 }
 
-void Model::train(std::vector<std::shared_ptr<Matrix>> x,
-                  std::vector<std::shared_ptr<Matrix>> y,
+void Model::train(std::shared_ptr<std::vector<std::shared_ptr<Matrix>>> x,
+                  std::shared_ptr<std::vector<std::shared_ptr<Matrix>>> y,
                   unsigned epochs,
                   unsigned batch_size)
 {
@@ -45,14 +46,15 @@ void Model::train(std::vector<std::shared_ptr<Matrix>> x,
     {
         // Determine batches
         unsigned i = 0;
-        unsigned nb_batches = ceil(x.size() / batch_size);
+        unsigned nb_batches = ceil(x->size() / batch_size);
         for (unsigned batch = 0; batch < nb_batches; batch++)
         {
             // For each batch, compute delta weights and biases
-            for (unsigned k = 0; k < batch_size && i < x.size(); k++)
+            for (unsigned k = 0; k < batch_size && i < x->size(); k++)
             {
-                layers_[0]->feedforward(x[i], true);
-                layers_[layers_.size() - 1]->backpropagation(y[i]);
+                layers_[0]->feedforward((*x)[i], true);
+                layers_[layers_.size() - 1]->backpropagation((*y)[i]);
+                std::cout << "epoch:" << epoch << ", batch:" << batch << ", i:" << i <<"\n";
                 i += 1;
             }
 
