@@ -49,19 +49,14 @@ Matrix Matrix::transpose()
 {
     Matrix res(cols_, rows_);
     for (unsigned i = 0; i < rows_; i++)
-    {
-        for (unsigned j = 0; j <= i; j++)
-        {
-            res.data_[i * cols_ + j] = data_[j * cols_ + i];
-            res.data_[j * cols_ + i] = data_[i * cols_ + j];
-        }
-    }
+        for (unsigned j = 0; j < cols_; j++)
+            res.data_[j * rows_ + i] = data_[i * cols_ + j];
     return res;
 }
 
 void Matrix::fill_random()
 {
-    srand (time(NULL));
+    srand(time(NULL));
     for (unsigned i = 0; i < rows_ * cols_; i++)
         data_[i] = (std::rand() / (double)RAND_MAX) * 2 - 1;
 }

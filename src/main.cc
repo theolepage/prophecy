@@ -7,19 +7,21 @@ using namespace std;
 
 int main(void)
 {
+    srand(time(NULL));
+
     Model model = Model();
 
     // Create model
     model.add(make_shared<InputLayer>(2));
-    model.add(make_shared<DenseLayer>(8, make_shared<SigmoidActivationFunction>()));
+    model.add(make_shared<DenseLayer>(4, make_shared<SigmoidActivationFunction>()));
     model.add(make_shared<DenseLayer>(2, make_shared<SigmoidActivationFunction>()));
 
     // Create dataset
     auto x_train = std::make_shared<std::vector<std::shared_ptr<Matrix>>>();
     auto y_train = std::make_shared<std::vector<std::shared_ptr<Matrix>>>();
-    for (unsigned i = 0; i < 10; i++)
+    for (unsigned i = 0; i < 10000; i++)
     {
-        unsigned rand = 0;
+        unsigned rand = std::rand() % 4;
         auto mx = std::make_shared<Matrix>(2, 1);
         auto my = std::make_shared<Matrix>(2, 1);
 
@@ -61,7 +63,7 @@ int main(void)
     }
 
     // Train model
-    model.compile(0.01);
+    model.compile(0.1);
     model.train(x_train, y_train, 1, 8);
 
     // Create input value

@@ -7,13 +7,7 @@ Model::Model()
     : compiled_(false)
 {}
 
-Model& Model::add(std::shared_ptr<InputLayer> layer)
-{
-    input_ = layer;
-    return *this;
-}
-
-Model& Model::add(std::shared_ptr<HiddenLayer> layer)
+Model& Model::add(std::shared_ptr<Layer> layer)
 {
     layers_.push_back(layer);
     return *this;
@@ -27,11 +21,11 @@ void Model::compile(double learning_rate)
     if (layers_.size() >= 2)
     {
         unsigned last = layers_.size() - 1;
-        layers_[0]->compile(input_->get_nb_neurons(), nullptr, layers_[1]);
-        layers_[last]->compile(layers_[last - 1]->get_nb_neurons(), layers_[last - 1], nullptr);
+        layers_[0]->compile(nullptr, layers_[1]);
+        layers_[last]->compile(layers_[last - 1], nullptr);
     }
     for (unsigned i = 1; i < layers_.size() - 1; i++)
-        layers_[i]->compile(layers_[i - 1]->get_nb_neurons(), layers_[i - 1], layers_[i]);
+        layers_[i]->compile(layers_[i - 1], layers_[i + 1]);
 }
 
 void Model::train(std::shared_ptr<std::vector<std::shared_ptr<Matrix>>> x,
@@ -54,13 +48,15 @@ void Model::train(std::shared_ptr<std::vector<std::shared_ptr<Matrix>>> x,
             {
                 layers_[0]->feedforward((*x)[i], true);
                 layers_[layers_.size() - 1]->backpropagation((*y)[i]);
-                std::cout << "epoch:" << epoch << ", batch:" << batch << ", i:" << i <<"\n";
                 i += 1;
             }
 
             // At the end of batch, update weights_ and biases_
             for (unsigned l = 1; l < layers_.size(); l++)
-                layers_[l]->update(learning_rate_);
+            {
+                auto layer = std::dynamic_pointer_cast<HiddenLayer>(layers_[l]);
+                layer->update(learning_rate_);
+            }
         }
     }
 }

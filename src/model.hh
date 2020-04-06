@@ -12,8 +12,7 @@ class Model
 public:
     Model();
 
-    Model& add(std::shared_ptr<InputLayer> layer);
-    Model& add(std::shared_ptr<HiddenLayer> layer);
+    Model& add(std::shared_ptr<Layer> layer);
 
     std::shared_ptr<Matrix> predict(std::shared_ptr<Matrix> x);
 
@@ -30,7 +29,5 @@ public:
 private:
     bool compiled_;
     double learning_rate_;
-
-    std::shared_ptr<InputLayer> input_;
-    std::vector<std::shared_ptr<HiddenLayer>> layers_;
+    std::vector<std::shared_ptr<Layer>> layers_;
 };

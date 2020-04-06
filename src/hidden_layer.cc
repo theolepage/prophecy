@@ -10,12 +10,7 @@ std::shared_ptr<Matrix> HiddenLayer::get_weights()
     return weights_;
 }
 
-std::shared_ptr<Matrix> HiddenLayer::get_last_a()
+std::shared_ptr<Matrix> HiddenLayer::get_biases()
 {
-    return last_a_;
-}
-
-std::shared_ptr<Matrix> HiddenLayer::get_delta()
-{
-    return delta_;
+    return biases_;
 }

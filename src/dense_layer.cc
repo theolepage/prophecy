@@ -7,18 +7,17 @@ DenseLayer::DenseLayer(unsigned nb_neurons,
         : HiddenLayer(nb_neurons, activation)
 {}
 
-void DenseLayer::compile(unsigned prev_nb_neurons,
-                         std::shared_ptr<HiddenLayer> prev,
-                         std::shared_ptr<HiddenLayer> next)
+void DenseLayer::compile(std::shared_ptr<Layer> prev,
+                         std::shared_ptr<Layer> next)
 {
     // Initialize weights and biases
-    weights_ = std::make_shared<Matrix>(get_nb_neurons(), prev_nb_neurons);
+    weights_ = std::make_shared<Matrix>(get_nb_neurons(), prev->get_nb_neurons());
     biases_ = std::make_shared<Matrix>(get_nb_neurons(), 1);
     weights_->fill_random();
     biases_->fill_random();
 
     // Initialize delta_weights_ and delta_biases_
-    delta_weights_ = std::make_shared<Matrix>(get_nb_neurons(), prev_nb_neurons);
+    delta_weights_ = std::make_shared<Matrix>(get_nb_neurons(), prev->get_nb_neurons());
     delta_biases_ = std::make_shared<Matrix>(get_nb_neurons(), 1);
 
     compiled_ = true;
@@ -44,13 +43,15 @@ std::shared_ptr<Matrix> DenseLayer::feedforward(std::shared_ptr<Matrix> input, b
 
 void DenseLayer::backpropagation(std::shared_ptr<Matrix> y)
 {
-    if (!prev_)
+    if (!prev_) // If we reach InputLayer
         return;
+
+    auto n = std::dynamic_pointer_cast<HiddenLayer>(next_);
 
     if (y)
         delta_ = std::make_shared<Matrix>(Matrix::multiply((*last_a_ - *y), last_z_->map(activation_->fd_)));
     else
-        delta_ = std::make_shared<Matrix>(prev_->get_weights()->transpose() * Matrix::multiply(*prev_->get_delta(), last_z_->map(activation_->fd_)));
+        delta_ = std::make_shared<Matrix>(Matrix::multiply(n->get_weights()->transpose() * *n->get_delta(), last_z_->map(activation_->fd_)));
 
     *delta_biases_ += *delta_;
     *delta_weights_ += *delta_ * prev_->get_last_a()->transpose();
