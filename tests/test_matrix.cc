@@ -8,12 +8,14 @@ Test(test_matrix, simple_get)
     Matrix m(2, 2);
     m.fill_sequence();
 
+    m(0, 1) = 17;
+
     // Matrix m2(8, 8);
     // m2.fill_sequence();
     // std::cout << m2;
 
     cr_assert_eq(m(0, 0), 0);
-    cr_assert_eq(m(0, 1), 1);
+    cr_assert_eq(m(0, 1), 17);
     cr_assert_eq(m(1, 0), 2);
     cr_assert_eq(m(1, 1), 3);
 }
@@ -42,7 +44,7 @@ Test(test_matrix, simple_map)
     m.fill_sequence();
 
     std::function<double(double)> f = [](double x) { return 2 * x; };
-    m.map(f);
+    m = m.map(f);
 
     cr_assert_eq(m(0, 0), 0);
     cr_assert_eq(m(0, 1), 2);

@@ -1,5 +1,3 @@
-#include <ctime>
-#include <cstdlib>
 #include "matrix.hh"
 
 Matrix::Matrix(unsigned rows, unsigned cols)
@@ -56,7 +54,6 @@ Matrix Matrix::transpose()
 
 void Matrix::fill_random()
 {
-    srand(time(NULL));
     for (unsigned i = 0; i < rows_ * cols_; i++)
         data_[i] = (std::rand() / (double)RAND_MAX) * 2 - 1;
 }
@@ -67,12 +64,13 @@ void Matrix::fill_sequence()
         data_[i] = i;
 }
 
-Matrix& Matrix::map(std::function<double(double)> func)
+Matrix Matrix::map(std::function<double(double)> func)
 {
+    Matrix res(rows_, cols_);
     for (unsigned r = 0; r < rows_; r++)
         for (unsigned c = 0; c < cols_; c++)
-            data_[r * cols_ + c] = func(data_[r * cols_ + c]);
-    return *this;
+            res.data_[r * cols_ + c] = func(data_[r * cols_ + c]);
+    return res;
 }
 
 Matrix Matrix::multiply(const Matrix& a, const Matrix& b)

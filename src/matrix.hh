@@ -21,7 +21,7 @@ public:
     void fill_random();
     void fill_sequence();
 
-    Matrix& map(std::function<double(double)>);
+    Matrix map(std::function<double(double)>);
     Matrix& operator+=(const Matrix& m);
     Matrix& operator-=(const Matrix& m);
     Matrix& operator*=(const Matrix& m);

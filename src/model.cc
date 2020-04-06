@@ -1,11 +1,14 @@
 #include <iostream>
 #include <cmath>
+#include <ctime>
 
 #include "model.hh"
 
 Model::Model()
     : compiled_(false)
-{}
+{
+    srand(time(NULL));
+}
 
 Model& Model::add(std::shared_ptr<Layer> layer)
 {
