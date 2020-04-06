@@ -14,9 +14,55 @@ int main(void)
     model.add(make_shared<DenseLayer>(8, make_shared<SigmoidActivationFunction>()));
     model.add(make_shared<DenseLayer>(2, make_shared<SigmoidActivationFunction>()));
 
+    // Create dataset
+    auto x_train = std::vector<std::shared_ptr<Matrix>>();
+    auto y_train = std::vector<std::shared_ptr<Matrix>>();
+    for (unsigned i = 0; i < 100; i++)
+    {
+        unsigned rand = 0;
+        auto mx = std::make_shared<Matrix>(2, 1);
+        auto my = std::make_shared<Matrix>(2, 1);
+
+        if (rand == 0)
+        {
+            (*mx)(0, 0) = 1;
+            (*mx)(1, 0) = 0;
+
+            (*my)(0, 0) = 1;
+            (*my)(1, 0) = 0;
+        }
+        else if (rand == 1)
+        {
+            (*mx)(0, 0) = 0;
+            (*mx)(1, 0) = 1;
+
+            (*my)(0, 0) = 1;
+            (*my)(1, 0) = 0;
+        }
+        else if (rand == 2)
+        {
+            (*mx)(0, 0) = 0;
+            (*mx)(1, 0) = 0;
+
+            (*my)(0, 0) = 0;
+            (*my)(1, 0) = 1;
+        }
+        else if (rand == 3)
+        {
+            (*mx)(0, 0) = 1;
+            (*mx)(1, 0) = 1;
+
+            (*my)(0, 0) = 0;
+            (*my)(1, 0) = 1;
+        }
+
+        x_train.push_back(mx);
+        y_train.push_back(my);
+    }
+
     // Train model
     model.compile(0.01);
-    // model.train(x_train, y_train, 10, 8);
+    model.train(x_train, y_train, 10, 8);
 
     // Create input value
     auto x = make_shared<Matrix>(2, 1);
