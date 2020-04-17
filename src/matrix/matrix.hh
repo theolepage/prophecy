@@ -15,7 +15,8 @@ enum class transpose
 enum class fill_type
 {
     RANDOM_FLOAT,
-    SEQUENCE
+    SEQUENCE,
+    ZERO
 };
 
 template <typename T>
@@ -82,6 +83,10 @@ public:
             case fill_type::SEQUENCE:
                 for (int i = 0; i < rows_ * cols_; ++i)
                     data_[i] = i;
+                break;
+            case fill_type::ZERO:
+                for (int i = 0; i < rows_ * cols_; ++i)
+                    data_[i] = static_cast<T>(0);
                 break;
         }
     }

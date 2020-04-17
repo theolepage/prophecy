@@ -64,7 +64,7 @@ public:
                 {
                     layers_[0]->feedforward(x[i], true);
                     layers_[layers_.size() - 1]->backpropagation(&y[i]);
-                    i += 1;
+                    ++i;
                 }
 
                 // At the end of batch, update weights_ and biases_

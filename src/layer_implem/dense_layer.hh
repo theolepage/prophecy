@@ -19,7 +19,7 @@ public:
     {
         auto z = Matrix<T>::dot(this->weights_, input);
         z += this->biases_;
-        auto a = Matrix<T>(z.map(this->activation_.f_));
+        auto a = z.map(this->activation_.f_);
 
         if (training)
         {
@@ -68,8 +68,8 @@ public:
         }
 
         // Reset delta_weights_ and delta_biases_
-        this->delta_weights_ = Matrix<T>(this->weights_.get_rows(), this->weights_.get_cols());
-        this->delta_biases_ = Matrix<T>(this->biases_.get_rows(), this->biases_.get_cols());
+        this->delta_weights_.fill(fill_type::ZERO);
+        this->delta_biases_.fill(fill_type::ZERO);
     }
 
     void compile(std::weak_ptr<Layer<T>> prev,
