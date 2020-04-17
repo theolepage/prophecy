@@ -1,12 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -Werror
 
-OBJS = $(addprefix src/, matrix.o               \
-                         model.o                \
-                         layer.o                \
-                         hidden_layer.o         \
-                         dense_layer.o          \
-                         activation_function.o)
+OBJS = $(addprefix src/, )
 OBJS_TESTS = $(addprefix tests/, test_matrix.o)
 
 TARGET = prophecy
