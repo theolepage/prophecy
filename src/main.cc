@@ -43,11 +43,12 @@ static void create_dataset(
 int main(void)
 {
     Model<model_type> model = Model<model_type>();
+    SigmoidActivationFunction s = SigmoidActivationFunction<model_type>();
 
     // Create model
     model.add(new InputLayer<model_type>(2));
-    model.add(new DenseLayer<model_type>(2, SigmoidActivationFunction<model_type>()));
-    model.add(new DenseLayer<model_type>(1, SigmoidActivationFunction<model_type>()));
+    model.add(new DenseLayer<model_type>(2, s));
+    model.add(new DenseLayer<model_type>(1, s));
 
     // Create dataset
     auto x_train = training_set();

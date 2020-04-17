@@ -27,6 +27,8 @@ public:
         return layers_[0]->feedforward(input, false);
     }
 
+    virtual ~Model() = default;
+
     void compile(T learning_rate)
     {
         learning_rate_ = learning_rate;

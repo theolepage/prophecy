@@ -15,6 +15,8 @@ public:
     , activation_(activation)
     {}
 
+    virtual ~HiddenLayer() = default;
+
     virtual void update(T learning_rate) = 0;
 
     Matrix<T>& get_weights(void) { return weights_; };

@@ -12,6 +12,8 @@ public:
     : nb_neurons_(nb_neurons)
     {}
 
+    virtual ~Layer() = default;
+
     virtual Matrix<T> feedforward(const Matrix<T>& input, bool training) = 0;
 
     virtual void backpropagation(const Matrix<T>* const y) = 0;

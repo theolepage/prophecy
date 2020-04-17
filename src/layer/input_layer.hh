@@ -11,6 +11,8 @@ public:
         : Layer<T>(nb_neurons)
     {}
 
+    virtual ~InputLayer() = default;
+
     virtual Matrix<T> feedforward(const Matrix<T>& input, bool training)
     {
         this->last_a_ = input;

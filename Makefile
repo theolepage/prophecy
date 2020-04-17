@@ -9,7 +9,7 @@ TARGET_TESTS = test
 
 all: $(TARGET)
 
-debug: CXXFLAGS+= -g #-fsanitize=address
+debug: CXXFLAGS+= -g -fsanitize=address
 debug: $(TARGET)
 
 $(TARGET): src/main.o $(OBJS)

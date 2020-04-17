@@ -13,6 +13,8 @@ public:
     : HiddenLayer<T>(nb_neurons, activation)
     {}
 
+    virtual ~DenseLayer() = default;
+
     Matrix<T> feedforward(const Matrix<T>& input, bool training)
     {
         auto z = Matrix<T>::dot(this->weights_, input);
