@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -Werror
 
-OBJS = $(addprefix src/, )
+OBJS = $(addprefix src/, main.o)
 OBJS_TESTS = $(addprefix tests/, test_matrix.o)
 
 TARGET = prophecy
@@ -12,13 +12,13 @@ all: $(TARGET)
 debug: CXXFLAGS+= -g -fsanitize=address
 debug: $(TARGET)
 
-$(TARGET): src/main.o $(OBJS)
+$(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 check: $(TARGET_TESTS)
 	@echo; ./$(TARGET_TESTS)
 
-$(TARGET_TESTS): $(OBJS) $(OBJS_TESTS)
+$(TARGET_TESTS): $(OBJS_TESTS)
 	$(CXX) $(CXXFLAGS) -lcriterion $^ -o $@
 
 clean:
