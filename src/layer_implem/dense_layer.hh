@@ -39,16 +39,17 @@ public:
 
         auto next = std::dynamic_pointer_cast<HiddenLayer<T>>(this->next_);
 
+        this->last_z_.map_inplace(this->activation_.fd_); // Avoid creating a new matrix below
         if (y != nullptr)
         {
-            this->delta_ = Matrix<T>::multiply(
-                (this->last_a_ - *y), this->last_z_.map(this->activation_.fd_));
+            this->last_a_ -= *y; // Same
+            this->delta_ = Matrix<T>::multiply(this->last_a_, this->last_z_);
         }
         else
         {
-            this->delta_ = Matrix<T>::multiply(
-                Matrix<T>::dot(next->get_weights(), next->get_delta(), transpose::LEFT),
-                    this->last_z_.map(this->activation_.fd_));
+            this->last_z_.multiply_inplace(
+                Matrix<T>::dot(next->get_weights(), next->get_delta(), transpose::LEFT)); // Same
+            this->delta_ = this->last_z_;
         }
 
         this->delta_biases_ += this->delta_;

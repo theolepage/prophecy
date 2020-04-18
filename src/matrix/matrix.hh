@@ -91,6 +91,14 @@ public:
         }
     }
 
+    Matrix<T>& map_inplace(std::function<T(T)> value_initializer)
+    {
+        assert(data_ != nullptr);
+        for (int i = 0; i < rows_ * cols_; ++i)
+            data_[i] = value_initializer(data_[i]);
+        return *this;
+    }
+
     Matrix<T> map(std::function<T(T)> value_initializer) const
     {
         assert(data_ != nullptr);
@@ -123,6 +131,17 @@ public:
                     return false;
         }
         return true;
+    }
+
+    Matrix<T>& multiply_inplace(const Matrix& b)
+    {
+        if (rows_ != b.rows_ || cols_ != b.cols_)
+            throw "Invalid matrix shape";
+
+        for (int i = 0; i < rows_ * cols_; i++)
+            data_[i] *= b.data_[i];
+
+        return *this;
     }
 
     static Matrix<T> multiply(const Matrix& a, const Matrix& b)
