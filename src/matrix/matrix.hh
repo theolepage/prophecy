@@ -57,6 +57,8 @@ public:
         data_ = std::shared_ptr<T[]>(array);
     }
 
+    virtual ~Matrix() = default;
+
     void fill(std::function<T(void)> value_initializer)
     {
         assert(data_ != nullptr);

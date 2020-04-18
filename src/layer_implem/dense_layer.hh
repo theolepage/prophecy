@@ -43,7 +43,8 @@ public:
         if (y != nullptr)
         {
             this->last_a_ -= *y; // Same
-            this->delta_ = Matrix<T>::multiply(this->last_a_, this->last_z_);
+            this->last_a_.multiply_inplace(this->last_z_); // Same
+            this->delta_ = this->last_a_;
         }
         else
         {
