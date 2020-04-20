@@ -67,6 +67,7 @@ public:
 
     T operator()(std::vector<int> coords) const
     {
+        
         return data_[coord_to_index(coords)];
     }
 
@@ -210,10 +211,80 @@ public:
         return op(right, [](T a, T b) { return a / b; });
     }
 
+    Tensor<T> sum(std::initializer_list<int> axis)
+    {
+        // sum
+        // (64, 5, 5)
+        // limit 3d
+        // 2 axis
+        
+        // padding
+        // (64, 5, 5)
+        // limit 3d
+        // 2 axis
+
+        // list<Tensor3D>
+
+
+        /*
+            data: [[[1,  2,  3],
+                    [4,  5,  6]],
+
+                   [[7,  8,  9],
+                    [10, 11, 12]],
+
+                   [[13, 14, 15],
+                    [16, 17, 18]]]
+        */
+         /*
+            out : [[5,   7,  9],
+                   [17, 19, 21],
+                   [29, 31, 33]]
+        */
+        // shape: { 3, 2, 3 }   => { 3, 3 }
+
+
+
+        // data : [[1, 2], [3, 4], [5, 6]]  => [3, 7, 11]
+        // shape: { 3, 2 }                  => { 3 }
+        // axis : { 1 }
+
+
+
+        // for (int i = 0; i < 3; i++)
+        //      T tmp = 0;
+        //      for (int j = 0; j < 2; j++)
+        //          tmp += (*this)({ i, j })
+        //       
+        //      
+        //
+
+
+        // data: [1, 2, 3, 4]
+        // shape: { 4 }
+        // axis: 0
+
+        // for (int i = 0; shape_[axis]; i++)
+        //      tmp += (*this)({ i });
+    
+
+        // Compute output shape
+        std::vector<int> output_shape(shape_.size() - 1);
+        for (int i = 0; i < shape_.size(); i++)
+            if (i != axis)
+                output_shape.push_back(shape_[i]);
+
+        Tensor<T> res(output_shape);
+        // 
+    }
+
     Tensor<T> conv(const Tensor &kernel, int padding, int stride)
     {
         //           H  W  C
         // kernel: ( 5, 5, 3 )
+
+        // for each filter input.conv(filter, padding, stride)
+        // stack 
     }
 
     /**
