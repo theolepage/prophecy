@@ -276,13 +276,6 @@ public:
         }
     }
 
-    Tensor<T> pad(std::vector<int> axis, T value)
-    {
-        // shape: { 10, 3, 3 }
-        // axis: { 0, 1, 1 }    value: 0
-        // out: { 10, 5, 5 }
-    }
-
     Tensor<T> append(const Tensor<T>& right)
     {
         // shape: { 2, 4, 4 }
@@ -298,29 +291,26 @@ public:
         // out: { 2, 4, 4 }
     }
 
-    Tensor<T> conv2D(const Tensor &kernel, int stride)
+    Tensor<T> conv3D(const Tensor &kernel, int stride)
     {
-        // kernel: ( KH, KW, C )
-        // shape:  ( TH, TW, C )
+        // Checks on dimensions
+        assert(shape_.size() == 3 && kernel.shape_.size() == 3)
+        assert(shape_[0] == kernel.shape_[0]);
+
+        int padding = 1;
+
         // Determine output shape
+        int out_h = 1 + (shape_[0] + 2 * padding - kernel.shape[0]) / stride;
+        int out_w = 1 + (shape_[1] + 2 * padding - kernel.shape[1]) / stride;
+        Tensor<T> res({ out_h, out_w });
 
         // Compute convolution
-        // Tensor<T> res(output_shape);
-        // for (int i = 0; i < kernel.shape_[0]; i++)
-        //     for (int j = 0; j < kernel.shape_[1]; j++)
-        //         for (int m = 0; m < shape_[0]; m++)
-        //             for (int n = 0; n < shape_[1]; n++)
-        //                 for (int c = 0; c < shape_[2]; c++)
-        //                     res({ k, l, c }) += (*this)({ n, c, s*i+k ,s*j+l }) * kernel({ n, f, i, j });
-
-        // shape_.size() == 3
-        // kernel.shape_.size() == 3
-        // output shape: ( H, W )
-
-        // nout = (nin + 2p - f / s) + 1
-
-        // for each filter input.conv(filter, padding, stride)
-        // stack 
+        for (int c = 0; c < shape_[0]; c++)
+            for (int i = 0; i < out_h; i++)
+                for (int j = 0; j < out_w; j++)
+                    for (int k = 0; k < kernel.shape_[0]; k++)
+                        for (int l = 0; l < kernel.shape_[1]; l++)
+                            res({ i, j }) += (*this)({ c, stride * i + k, stride * j + l }) * kernel({ c, k, l });
     }
 
     /**

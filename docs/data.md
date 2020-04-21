@@ -3,7 +3,6 @@
 - [ ] get(): when axis is < shape => return tensor
 - [ ] pad(): pad specified dimensions
 - [ ] append()
-- [ ] conv2D(): conv specified dimensions with stride and padding (hardcode shape 3 dim)
 
 - [ ] Fusion with Matrix and adapt DenseLayer
 
