@@ -1,11 +1,11 @@
 # To-Do
 
-- [ ] reduce(): make sum generic by passing a function (+, -, *, /)
-- [ ] pad(): pad specified dimensions
-- [ ] conv(): conv specified dimensions with stride and padding
 - [ ] get(): when axis is < shape => return tensor
-- [ ] transpose(): allow nd tensor but apply transpose on last 2 dimensions
-- [ ] matmul(): allow nd tensor but apply matmul on last 2 dimensions
+- [ ] pad(): pad specified dimensions
+- [ ] append()
+- [ ] conv2D(): conv specified dimensions with stride and padding (hardcode shape 3 dim)
+
+- [ ] Fusion with Matrix and adapt DenseLayer
 
 # Our data structures
 

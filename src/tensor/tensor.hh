@@ -5,6 +5,7 @@
 #include <functional>
 #include <cassert>
 #include <cstdarg>
+#include <algorithm>
 
 enum class fill_type
 {
@@ -26,13 +27,6 @@ public:
     Tensor()
         : size_(0), shape_(0), data_(nullptr)
     {}
-
-    Tensor(std::initializer_list<int> shape)
-        : shape_(shape)
-    {
-        size_ = compute_size(shape);
-        data_ = std::shared_ptr<T[]>(new T[size_]);
-    }
 
     Tensor(std::vector<int> shape)
         : shape_(shape)
@@ -74,6 +68,9 @@ public:
 
     T operator()(std::vector<int> coords) const
     {
+        // shape: { 3, 3 }
+        // coord: { 2 }
+        // out: { 3, 4, 5 }
         return data_[coord_to_index(coords)];
     }
 
@@ -217,23 +214,36 @@ public:
         return op(right, [](T a, T b) { return a / b; });
     }
 
-    Tensor<T> sum(std::vector<int> axis)
+    Tensor<T> reduce(T subtotal_default, std::function<T(T, T)> fn)
     {
         Tensor<T> res = *this;
-        for (int dim : axis)
-        {
-            res = res.sum(dim);
-        }
+        for (int i = shape_.size() - 1; i >= 0; i--)
+            res = res.reduce(i, subtotal_default, fn);
         return res;
     }
 
-    Tensor<T> sum(unsigned dim)
+    Tensor<T> reduce(std::vector<int> axis, T subtotal_default, std::function<T(T, T)> fn)
+    {
+        Tensor<T> res = *this;
+
+        // Remove duplicates and sort in descending order
+        std::sort(axis.begin(), axis.end(), std::greater<int>());
+        axis.erase(std::unique(axis.begin(), axis.end()), axis.end());
+
+        for (int dim : axis)
+            res = res.reduce(dim, subtotal_default, fn);
+        return res;
+    }
+
+    Tensor<T> reduce(unsigned dim, T subtotal_default, std::function<T(T, T)> fn)
     {
         // Compute output shape
         std::vector<int> output_shape;
         for (unsigned i = 0; i < shape_.size(); i++)
             if (i != dim)
                 output_shape.push_back(shape_[i]);
+        if (output_shape.size() == 0)
+            output_shape = { 1 };
         Tensor<T> res(output_shape);
         int index = 0;
 
@@ -247,29 +257,67 @@ public:
         for (unsigned i = 0; i < dim; i++)
             size_prevdim *= shape_[i];
         for (int i = 0; i < size_prevdim; i++)
-            sum(res, i, step, dim, index);
+            reduce_aux(res, i, step, dim, index, subtotal_default, fn);
 
         return res;
     }
 
-    void sum(const Tensor<T>& res, unsigned i, int step, int dim, int& index)
+    void reduce_aux(const Tensor<T>& res, unsigned i, int step, int dim, int& index, T subtotal_default, std::function<T(T, T)> fn)
     {
         int size_dim = shape_[dim];
         unsigned begin = i * (step * size_dim);
         for (int i = 0; i < step; i++)
         {
-            T sum = 0;
+            T subtotal = subtotal_default;
             for (int j = 0; j < size_dim; j++)
-                sum += data_[begin + j * step + i];
-            res.data_[index] = sum;
+                subtotal = fn(subtotal, data_[begin + j * step + i]);
+            res.data_[index] = subtotal;
             index += 1;
         }
     }
 
-    Tensor<T> conv(const Tensor &kernel, int padding, int stride)
+    Tensor<T> pad(std::vector<int> axis, T value)
     {
-        //           H  W  C
-        // kernel: ( 5, 5, 3 )
+        // shape: { 10, 3, 3 }
+        // axis: { 0, 1, 1 }    value: 0
+        // out: { 10, 5, 5 }
+    }
+
+    Tensor<T> append(const Tensor<T>& right)
+    {
+        // shape: { 2, 4, 4 }
+        // right: { 1, 4, 4 }
+        // output: { 3, 4, 4 }
+
+        // shape: { 1, 2, 4, 4 }
+        // right: { 4, 4 }
+        // output: { 1, 3, 4, 4 }
+
+        // shape: { 1, 4, 4 }
+        // right: { 1, 4, 4 }
+        // out: { 2, 4, 4 }
+    }
+
+    Tensor<T> conv2D(const Tensor &kernel, int stride)
+    {
+        // kernel: ( KH, KW, C )
+        // shape:  ( TH, TW, C )
+        // Determine output shape
+
+        // Compute convolution
+        // Tensor<T> res(output_shape);
+        // for (int i = 0; i < kernel.shape_[0]; i++)
+        //     for (int j = 0; j < kernel.shape_[1]; j++)
+        //         for (int m = 0; m < shape_[0]; m++)
+        //             for (int n = 0; n < shape_[1]; n++)
+        //                 for (int c = 0; c < shape_[2]; c++)
+        //                     res({ k, l, c }) += (*this)({ n, c, s*i+k ,s*j+l }) * kernel({ n, f, i, j });
+
+        // shape_.size() == 3
+        // kernel.shape_.size() == 3
+        // output shape: ( H, W )
+
+        // nout = (nin + 2p - f / s) + 1
 
         // for each filter input.conv(filter, padding, stride)
         // stack 
@@ -281,7 +329,8 @@ public:
 
     Tensor<T> transpose()
     {
-        assert(data_ != nullptr && shape_.size() == 2);
+        assert(data_ != nullptr);
+        assert(shape_.size() == 1 || shape_.size() == 2);
 
         Tensor<T> res(shape_);
         int rows = shape_[0];
@@ -296,7 +345,8 @@ public:
 
     Tensor<T> matmul(const Tensor<T>& right)
     {
-        assert(data_ != nullptr && shape_.size() == 2);
+        assert(data_ != nullptr);
+        assert(shape_.size() == 1 || shape_.size() == 2);
 
         int l_rows = shape_[0];
         int l_cols = shape_[1];
@@ -383,7 +433,7 @@ private:
 
     int coord_to_index(std::vector<int> coords)
     {
-        assert(coords.size() <= shape_.size());
+        assert(coords.size() == shape_.size());
 
         int res = 0;
         for (unsigned i = 0; i < coords.size(); i++)
