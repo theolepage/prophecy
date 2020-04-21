@@ -229,69 +229,12 @@ public:
 
     Tensor<T> sum(unsigned dim)
     {
-        // sum
-        // (64, 5, 5)
-        // limit 3d
-        // 2 axis
-        
-        // padding
-        // (64, 5, 5)
-        // limit 3d
-        // 2 axis
-
-        // list<Tensor3D>
-
-
-        /*
-            data: [[[1,  2,  3],
-                    [4,  5,  6]],
-
-                   [[7,  8,  9],
-                    [10, 11, 12]],
-
-                   [[13, 14, 15],
-                    [16, 17, 18]]]
-        */
-         /*
-            out : [[5,   7,  9],
-                   [17, 19, 21],
-                   [29, 31, 33]]
-        */
-        // shape: { 3, 2, 3 }   => { 3, 3 }
-
-
-
-        // data : [[1, 2], [3, 4], [5, 6]]  => [3, 7, 11]
-        // shape: { 3, 2 }                  => { 3 }
-        // axis : { 1 }
-
-
-
-        // for (int i = 0; i < 3; i++)
-        //      T tmp = 0;
-        //      for (int j = 0; j < 2; j++)
-        //          tmp += (*this)({ i, j })
-        //       
-        //      
-        //
-
-
-        // data: [1, 2, 3, 4]
-        // shape: { 4 }
-        // axis: 0
-
-        // for (int i = 0; shape_[axis]; i++)
-        //      tmp += (*this)({ i });
-
-
-
         // Compute output shape
-        std::vector<int> output_shape(0); // shape_.size() - 1);
+        std::vector<int> output_shape;
         for (unsigned i = 0; i < shape_.size(); i++)
             if (i != dim)
                 output_shape.push_back(shape_[i]);
         Tensor<T> res(output_shape);
-        Tensor<T>* resptr = &res;
         int index = 0;
 
         // Compute the step
@@ -304,22 +247,22 @@ public:
         for (unsigned i = 0; i < dim; i++)
             size_prevdim *= shape_[i];
         for (int i = 0; i < size_prevdim; i++)
-            sum(resptr, i, step, dim, &index);
+            sum(res, i, step, dim, index);
 
         return res;
     }
 
-    void sum(Tensor* res, unsigned iteration, int step, int dim, int* index)
+    void sum(const Tensor<T>& res, unsigned i, int step, int dim, int& index)
     {
         int size_dim = shape_[dim];
-        unsigned begin = iteration * (step * size_dim);
+        unsigned begin = i * (step * size_dim);
         for (int i = 0; i < step; i++)
         {
             T sum = 0;
             for (int j = 0; j < size_dim; j++)
                 sum += data_[begin + j * step + i];
-            res->data_[*index] = sum;
-            *index += 1;
+            res.data_[index] = sum;
+            index += 1;
         }
     }
 
