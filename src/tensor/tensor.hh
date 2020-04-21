@@ -34,6 +34,13 @@ public:
         data_ = std::shared_ptr<T[]>(new T[size_]);
     }
 
+    Tensor(std::vector<int> shape)
+        : shape_(shape)
+    {
+        size_ = compute_size(shape);
+        data_ = std::shared_ptr<T[]>(new T[size_]);
+    }
+
     Tensor(const Tensor<T>& t)
     {
         size_ = t.size_;
@@ -67,7 +74,6 @@ public:
 
     T operator()(std::vector<int> coords) const
     {
-        
         return data_[coord_to_index(coords)];
     }
 
@@ -211,7 +217,17 @@ public:
         return op(right, [](T a, T b) { return a / b; });
     }
 
-    Tensor<T> sum(std::initializer_list<int> axis)
+    Tensor<T> sum(std::vector<int> axis)
+    {
+        Tensor<T> res = *this;
+        for (int dim : axis)
+        {
+            res = res.sum(dim);
+        }
+        return res;
+    }
+
+    Tensor<T> sum(unsigned dim)
     {
         // sum
         // (64, 5, 5)
@@ -266,16 +282,45 @@ public:
 
         // for (int i = 0; shape_[axis]; i++)
         //      tmp += (*this)({ i });
-    
+
+
 
         // Compute output shape
-        std::vector<int> output_shape(shape_.size() - 1);
-        for (int i = 0; i < shape_.size(); i++)
-            if (i != axis)
+        std::vector<int> output_shape(0); // shape_.size() - 1);
+        for (unsigned i = 0; i < shape_.size(); i++)
+            if (i != dim)
                 output_shape.push_back(shape_[i]);
-
         Tensor<T> res(output_shape);
-        // 
+        Tensor<T>* resptr = &res;
+        int index = 0;
+
+        // Compute the step
+        int step = 1;
+        for (unsigned i = dim + 1; i < shape_.size(); i++)
+            step *= shape_[i];
+
+        // For every element of this dimension, sum what is inside
+        int size_prevdim = 1;
+        for (unsigned i = 0; i < dim; i++)
+            size_prevdim *= shape_[i];
+        for (int i = 0; i < size_prevdim; i++)
+            sum(resptr, i, step, dim, &index);
+
+        return res;
+    }
+
+    void sum(Tensor* res, unsigned iteration, int step, int dim, int* index)
+    {
+        int size_dim = shape_[dim];
+        unsigned begin = iteration * (step * size_dim);
+        for (int i = 0; i < step; i++)
+        {
+            T sum = 0;
+            for (int j = 0; j < size_dim; j++)
+                sum += data_[begin + j * step + i];
+            res->data_[*index] = sum;
+            *index += 1;
+        }
     }
 
     Tensor<T> conv(const Tensor &kernel, int padding, int stride)
