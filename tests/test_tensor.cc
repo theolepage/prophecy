@@ -104,5 +104,30 @@ Test(test_tensor, test_reduce_axis_zero)
     cr_assert_eq(please({ 0, 1 }), 15);
     cr_assert_eq(please({ 1, 0 }), 18);
     cr_assert_eq(please({ 1, 1 }), 21);
+}
 
+Test(test_tensor, get_one)
+{
+    Tensor<int> t({ 3, 2, 2 });
+    t.fill(fill_type::SEQUENCE);
+
+    std::cout << t << "\n\n";
+
+    Tensor<int> please = t.get({ 1, 1, 2, 0 });
+
+    cr_assert_eq(please({ 0 }), 33);
+}
+
+Test(test_tensor, simple_get)
+{
+    Tensor<int> t({ 2, 2, 3, 3 });
+    t.fill(fill_type::SEQUENCE);
+
+    std::cout << t << "\n\n";
+
+    Tensor<int> please = t.get({ 1, 1, 2 });
+
+    cr_assert_eq(please({ 0 }), 33);
+    cr_assert_eq(please({ 1 }), 34);
+    cr_assert_eq(please({ 2 }), 35);
 }

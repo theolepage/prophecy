@@ -1,5 +1,4 @@
 #pragma once
-
 #include <ostream>
 #include <memory>
 #include <functional>
@@ -214,6 +213,29 @@ public:
         return op(right, [](T a, T b) { return a / b; });
     }
 
+    Tensor<T> get(std::vector<int> coords)
+    {
+        unsigned prevdim = coords.size();
+        unsigned shape_size = shape_.size();
+        assert(prevdim <= shape_size);
+
+        while (coords.size() < shape_size)
+            coords.push_back(0);
+
+        int begin = coord_to_index(coords);
+
+        std::vector<int> new_shape(0);
+        for (unsigned i = prevdim; i < shape_size; i++)
+            new_shape.push_back(shape_[i]);
+        if (!new_shape.size())
+            new_shape.push_back(1);
+
+        std::shared_ptr<T[]> sub_data(&(data_[begin]));
+
+        Tensor<T> res(new_shape, sub_data);
+        return res;
+    }
+
     Tensor<T> reduce(T subtotal_default, std::function<T(T, T)> fn)
     {
         Tensor<T> res = *this;
@@ -386,7 +408,7 @@ public:
                 os << "[";
                 new_line--;
             }
-            
+
             os << " " << t(coord);
             coord[l] += 1;
 
@@ -411,7 +433,15 @@ public:
 private:
     int size_;
     std::vector<int> shape_;
+
     std::shared_ptr<T[]> data_;
+
+    Tensor(std::vector<int> shape, std::shared_ptr<T[]> data)
+        : shape_(shape)
+    {
+        size_ = compute_size(shape);
+        data_ = data;
+    }
 
     int compute_size(std::vector<int> shape)
     {
@@ -426,12 +456,12 @@ private:
         assert(coords.size() == shape_.size());
 
         int res = 0;
-        for (unsigned i = 0; i < coords.size(); i++)
+        int step = 1;
+
+        for (int dim = shape_.size() - 1; dim >= 0; dim--)
         {
-            unsigned indices_to_skip = 1;
-            for (unsigned j = i + 1; j < shape_.size(); j++)
-                indices_to_skip *= shape_[j];
-            res += coords[i] * indices_to_skip;   
+            res += coords[dim] * step;
+            step *= shape_[dim];
         }
 
         assert(res < size_);
