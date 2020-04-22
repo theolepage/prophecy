@@ -5,8 +5,9 @@
 #include <iostream>
 #include <fstream>
 #include <array>
+#include <stdio.h>
 
-using data_type = unsigned char;
+using data_type = char;
 
 enum class set_type
 {
@@ -95,6 +96,10 @@ private:
         static constexpr auto image_width = 32;
         static constexpr auto image_height = 32;
         std::ifstream file_reader(file);
+        if (!file_reader.is_open())
+            throw "bad file";
+
+        std::cout << filesize(file) << std::endl;
 
         for (int image = 0; image < nb_image; ++image)
         {
@@ -111,12 +116,15 @@ private:
             std::array<Matrix<data_type>, 3> rgb{
                 {Matrix<data_type>(32, 32), Matrix<data_type>(32, 32), Matrix<data_type>(32, 32)}
             };
+
+            int a = 0;
             for (int channel = 0; channel < 3; ++channel)
             {
                 for (int y = 0; y < image_height; ++y)
                 {
                     for (int x = 0; x < image_width; ++x)
                     {
+                        a++;
                         file_reader >> value;
                         rgb[channel](y, x) = value;
                     }
@@ -124,6 +132,12 @@ private:
             }
             x.emplace_back(rgb);
         }
+    }
+
+    std::ifstream::pos_type filesize(const char* filename)
+    {
+        std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+        return in.tellg();
     }
 
     c_training_set x;

@@ -76,7 +76,9 @@ static void cirfa_10_example(void)
     Model<model_type> model = Model<model_type>();
     SigmoidActivationFunction s = SigmoidActivationFunction<model_type>();
     Dataset_handler d_s;
-    d_s.read("data_batch_1.bin", set_type::CIFAR_10);
+    d_s.read("data/data_batch_1.bin", set_type::CIFAR_10);
+
+
 
     // Create model
     model.add(new InputLayer<model_type>(32*32));
@@ -109,7 +111,7 @@ static void cirfa_10_example(void)
 
 int main(void)
 {
-    xor_example();
+    //xor_example();
     cirfa_10_example();
 
     return 0;
