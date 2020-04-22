@@ -66,6 +66,14 @@ public:
             data_[i] = value_initializer();
     }
 
+    template <typename FUNCTOR_TYPE>
+    void fill(FUNCTOR_TYPE& func)
+    {
+        assert(data_ != nullptr);
+        for (int i = 0; i < rows_ * cols_; ++i)
+            data_[i] = func();
+    }
+
     void fill(T value)
     {
         assert(data_ != nullptr);
@@ -116,6 +124,12 @@ public:
         return data_[y * cols_ + x];
     }
 
+    T operator()(int xy) const
+    {
+        assert(xy < cols_ * rows_);
+        return data_[xy];
+    }
+
     T& operator()(int y, int x)
     {
         assert(y * cols_ + x < cols_ * rows_);
@@ -143,6 +157,13 @@ public:
         for (int i = 0; i < rows_ * cols_; i++)
             data_[i] *= b.data_[i];
 
+        return *this;
+    }
+
+    Matrix<T>& flatten_inplace(void)
+    {
+        rows_ = cols_ * rows_;
+        cols_ = 1;
         return *this;
     }
 
@@ -292,7 +313,7 @@ private:
         static constexpr float min_rand_value = -1.0f;
         static constexpr float max_rand_value = 1.0f;
         return min_rand_value
-                + static_cast <float>(rand()) /
+                + static_cast<float>(rand()) /
                     (static_cast<float>(RAND_MAX/(max_rand_value-min_rand_value)));
     }
 };
