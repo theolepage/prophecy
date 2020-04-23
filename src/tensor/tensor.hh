@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstdarg>
 #include <algorithm>
+#include <iostream>
 
 enum class fill_type
 {
@@ -24,14 +25,16 @@ public:
     */
 
     Tensor()
-        : size_(0), shape_(0), data_(nullptr)
+        : size_(0), shape_(0), data_(nullptr), prevent_free_(false), transposed_(false)
     {}
 
-    Tensor(std::vector<int> shape)
-        : shape_(shape)
+    Tensor(const std::vector<int>& shape)
+        : shape_(std::make_shared<std::vector<int>>(shape))
     {
         size_ = compute_size(shape);
-        data_ = std::shared_ptr<T[]>(new T[size_]);
+        data_ = new T[size_];
+        prevent_free_ = false;
+        transposed_ = false;
     }
 
     Tensor(const Tensor<T>& t)
@@ -39,6 +42,8 @@ public:
         size_ = t.size_;
         shape_ = t.shape_;
         data_ = t.data_;
+        prevent_free_ = t.prevent_free_;
+        transposed_ = t.transposed_;
     }
 
     Tensor& operator=(const Tensor<T>& t)
@@ -46,18 +51,24 @@ public:
         size_ = t.size_;
         shape_ = t.shape_;
         data_ = t.data_;
+        prevent_free_ = t.prevent_free_;
+        transposed_ = t.transposed_;
         return *this;
     }
 
-    virtual ~Tensor() = default;
+    virtual ~Tensor()
+    {
+        if (!prevent_free_)
+            delete[] data_;
+    }
 
     /**
     * Getters / setters
     */
 
-    std::vector<int> get_shape() const
+    std::vector<int>& get_shape()
     {
-        return shape_;
+        return *shape_;
     }
 
     int get_size() const
@@ -65,11 +76,13 @@ public:
         return size_;
     }
 
+    int get_sub_matrix() const
+    {
+        return prevent_free_;
+    }
+
     T operator()(std::vector<int> coords) const
     {
-        // shape: { 3, 3 }
-        // coord: { 2 }
-        // out: { 3, 4, 5 }
         return data_[coord_to_index(coords)];
     }
 
@@ -80,9 +93,9 @@ public:
 
     void reshape(std::initializer_list<int> shape)
     {
-        // To-Do: assert compute_size(shape) == compute_size(shape_)
+        if (compute_size(shape) != compute_size(shape_))
+            throw "New shape must be of same size.";
 
-        size_ = compute_size(shape);
         shape_ = shape;
     }
 
@@ -94,7 +107,7 @@ public:
     {
         assert(data_ != nullptr);
 
-        for (int i = 0; i < size_; i++)
+        for (long long i = 0; i < size_; i++)
             data_[i] = value_initializer();
     }
 
@@ -102,7 +115,7 @@ public:
     {
         assert(data_ != nullptr);
 
-        for (int i = 0; i < size_; i++)
+        for (long long i = 0; i < size_; i++)
             data_[i] = value;
     }
 
@@ -113,19 +126,19 @@ public:
         switch(type)
         {
             case fill_type::RANDOM:
-                for (int i = 0; i < size_; i++)
+                for (long long i = 0; i < size_; i++)
                     data_[i] = get_random_float();
                 break;
             case fill_type::SEQUENCE:
-                for (int i = 0; i < size_; i++)
+                for (long long i = 0; i < size_; i++)
                     data_[i] = i;
                 break;
             case fill_type::ZEROS:
-                for (int i = 0; i < size_; i++)
+                for (long long i = 0; i < size_; i++)
                     data_[i] = static_cast<T>(0);
                 break;
             case fill_type::ONES:
-                for (int i = 0; i < size_; i++)
+                for (long long i = 0; i < size_; i++)
                     data_[i] = static_cast<T>(1);
                 break;
         }
@@ -135,7 +148,7 @@ public:
     {
         assert(data_ != nullptr);
 
-        for (int i = 0; i < size_; i++)
+        for (long long i = 0; i < size_; i++)
             data_[i] = value_initializer(data_[i]);
         return *this;
     }
@@ -145,7 +158,7 @@ public:
         assert(data_ != nullptr);
 
         Tensor<T> res(shape_);
-        for (int i = 0; i < size_; i++)
+        for (long long i = 0; i < size_; i++)
             res.data_[i] = value_initializer(data_[i]);
         return res;
     }
@@ -157,7 +170,7 @@ public:
             throw std::invalid_argument("Operations requires the two tensors to have the same shape.");
 
         Tensor<T> res(shape_);
-        for (int i = 0; i < get_size(); i++)
+        for (long long i = 0; i < size_; i++)
             res.data_[i] = fn(data_[i], right.data_[i]);
         return res;
     }
@@ -168,7 +181,7 @@ public:
         if (shape_ != right.shape_)
             throw std::invalid_argument("Operations requires the two tensors to have the same shape.");
 
-        for (int i = 0; i < get_size(); i++)
+        for (long long i = 0; i < get_size(); i++)
             data_[i] = fn(data_[i], right.data_[i]);
         return *this;
     }
@@ -213,33 +226,31 @@ public:
         return op(right, [](T a, T b) { return a / b; });
     }
 
-    Tensor<T> get(std::vector<int> coords)
+    Tensor<T> extract(std::vector<int> coords)
     {
         unsigned prevdim = coords.size();
-        unsigned shape_size = shape_.size();
+        unsigned shape_size = shape_->size();
         assert(prevdim <= shape_size);
 
         while (coords.size() < shape_size)
             coords.push_back(0);
 
-        int begin = coord_to_index(coords);
+        long long begin = coord_to_index(coords);
 
         std::vector<int> new_shape(0);
         for (unsigned i = prevdim; i < shape_size; i++)
-            new_shape.push_back(shape_[i]);
+            new_shape.push_back(shape_->at(i));
         if (!new_shape.size())
             new_shape.push_back(1);
 
-        std::shared_ptr<T[]> sub_data(&(data_[begin]));
-
-        Tensor<T> res(new_shape, sub_data);
+        Tensor<T> res(new_shape, data_ + begin);
         return res;
     }
 
     Tensor<T> reduce(T subtotal_default, std::function<T(T, T)> fn)
     {
         Tensor<T> res = *this;
-        for (int i = shape_.size() - 1; i >= 0; i--)
+        for (int i = shape_->size() - 1; i >= 0; i--)
             res = res.reduce(i, subtotal_default, fn);
         return res;
     }
@@ -252,43 +263,53 @@ public:
         std::sort(axis.begin(), axis.end(), std::greater<int>());
         axis.erase(std::unique(axis.begin(), axis.end()), axis.end());
 
+        int a = 0;
         for (int dim : axis)
-            res = res.reduce(dim, subtotal_default, fn);
+        {
+            res = res.reduce(a, dim, subtotal_default, fn);
+            a++;
+        }
+
+        res.prevent_free_ = false;
         return res;
     }
 
-    Tensor<T> reduce(unsigned dim, T subtotal_default, std::function<T(T, T)> fn)
+    Tensor<T> reduce(int a, unsigned dim, T subtotal_default, std::function<T(T, T)> fn)
     {
         // Compute output shape
         std::vector<int> output_shape;
-        for (unsigned i = 0; i < shape_.size(); i++)
+        for (unsigned i = 0; i < shape_->size(); i++)
             if (i != dim)
-                output_shape.push_back(shape_[i]);
+                output_shape.push_back(shape_->at(i));
         if (output_shape.size() == 0)
             output_shape = { 1 };
         Tensor<T> res(output_shape);
         int index = 0;
 
         // Compute the step
-        int step = 1;
-        for (unsigned i = dim + 1; i < shape_.size(); i++)
-            step *= shape_[i];
+        long long step = 1;
+        for (unsigned i = dim + 1; i < shape_->size(); i++)
+            step *= shape_->at(i);
 
         // For every element of this dimension, sum what is inside
-        int size_prevdim = 1;
+        long long size_prevdim = 1;
         for (unsigned i = 0; i < dim; i++)
-            size_prevdim *= shape_[i];
-        for (int i = 0; i < size_prevdim; i++)
+            size_prevdim *= shape_->at(i);
+        for (long long i = 0; i < size_prevdim; i++)
             reduce_aux(res, i, step, dim, index, subtotal_default, fn);
+
+        res.prevent_free_ = true;
+        if (a != 0)
+            delete[] data_;
 
         return res;
     }
 
     void reduce_aux(const Tensor<T>& res, unsigned i, int step, int dim, int& index, T subtotal_default, std::function<T(T, T)> fn)
     {
-        int size_dim = shape_[dim];
-        unsigned begin = i * (step * size_dim);
-        for (int i = 0; i < step; i++)
+        int size_dim = shape_->at(dim);
+        long long begin = i * (step * size_dim);
+        for (long long i = 0; i < step; i++)
         {
             T subtotal = subtotal_default;
             for (int j = 0; j < size_dim; j++)
@@ -298,43 +319,6 @@ public:
         }
     }
 
-    Tensor<T> append(const Tensor<T>& right)
-    {
-        // shape: { 2, 4, 4 }
-        // right: { 1, 4, 4 }
-        // output: { 3, 4, 4 }
-
-        // shape: { 1, 2, 4, 4 }
-        // right: { 4, 4 }
-        // output: { 1, 3, 4, 4 }
-
-        // shape: { 1, 4, 4 }
-        // right: { 1, 4, 4 }
-        // out: { 2, 4, 4 }
-    }
-
-    Tensor<T> conv3D(const Tensor &kernel, int stride)
-    {
-        // Checks on dimensions
-        assert(shape_.size() == 3 && kernel.shape_.size() == 3)
-        assert(shape_[0] == kernel.shape_[0]);
-
-        int padding = 1;
-
-        // Determine output shape
-        int out_h = 1 + (shape_[0] + 2 * padding - kernel.shape[0]) / stride;
-        int out_w = 1 + (shape_[1] + 2 * padding - kernel.shape[1]) / stride;
-        Tensor<T> res({ out_h, out_w });
-
-        // Compute convolution
-        for (int c = 0; c < shape_[0]; c++)
-            for (int i = 0; i < out_h; i++)
-                for (int j = 0; j < out_w; j++)
-                    for (int k = 0; k < kernel.shape_[0]; k++)
-                        for (int l = 0; l < kernel.shape_[1]; l++)
-                            res({ i, j }) += (*this)({ c, stride * i + k, stride * j + l }) * kernel({ c, k, l });
-    }
-
     /**
     * Matrix operations (transpose, matmul)
     */
@@ -342,14 +326,15 @@ public:
     Tensor<T> transpose()
     {
         assert(data_ != nullptr);
-        assert(shape_.size() == 1 || shape_.size() == 2);
+        if (shape_->size() > 2)
+            throw "Invalid shape for matrix transpose.";
 
         Tensor<T> res(shape_);
-        int rows = shape_[0];
-        int cols = shape_[1];
+        int rows = shape_->at(0);
+        int cols = shape_->at(1);
 
-        for (unsigned i = 0; i < rows; i++)
-            for (unsigned j = 0; j < cols; j++)
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < cols; j++)
                 res.data_[j * rows + i] = data_[i * cols + j];
 
         return res;
@@ -358,12 +343,13 @@ public:
     Tensor<T> matmul(const Tensor<T>& right)
     {
         assert(data_ != nullptr);
-        assert(shape_.size() == 1 || shape_.size() == 2);
+        if (shape_->size() > 2)
+            throw "Invalid shape for matrix multiplication.";
 
-        int l_rows = shape_[0];
-        int l_cols = shape_[1];
-        int r_rows = right.shape_[0];
-        int r_cols = right.shape_[1];
+        int l_rows = shape_->at(0);
+        int l_cols = shape_->at(1);
+        int r_rows = right.shape_->at(0);
+        int r_cols = right.shape_->at(1);
 
         if (r_rows != l_cols)
             throw std::invalid_argument("Invalid shapes for matrix multiplication.");
@@ -393,7 +379,7 @@ public:
         int l = shape.size() - 1;
 
         int new_line = shape.size();
-        for (int i = 0; i < t.get_size(); i++)
+        for (long long i = 0; i < t.get_size(); i++)
         {
             // Opening
             if (i != 0 && new_line > 0)
@@ -431,40 +417,44 @@ public:
     }
 
 private:
-    int size_;
-    std::vector<int> shape_;
+    long long size_;
+    std::shared_ptr<std::vector<int>> shape_;
+    T *data_;
+    bool prevent_free_;
+    bool transposed_;
 
-    std::shared_ptr<T[]> data_;
-
-    Tensor(std::vector<int> shape, std::shared_ptr<T[]> data)
-        : shape_(shape)
+    Tensor(std::vector<int> shape, T *data)
+        : shape_(std::shared_ptr<std::vector<int>>(shape))
     {
         size_ = compute_size(shape);
         data_ = data;
+        prevent_free_ = true;
+        transposed_ = false;
     }
 
-    int compute_size(std::vector<int> shape)
+    long long compute_size(std::vector<int> shape)
     {
-        int res = 1;
+        long long res = 1;
         for (auto v : shape)
             res *= v;
         return res;
     }
 
-    int coord_to_index(std::vector<int> coords)
+    long long coord_to_index(std::vector<int> coords)
     {
-        assert(coords.size() == shape_.size());
+        assert(coords.size() == shape_->size());
+        for (unsigned i = 0; i < shape_->size(); i++)
+            assert(coords[i] < shape_->at(i));
 
-        int res = 0;
-        int step = 1;
+        long long res = 0;
+        long long step = 1;
 
-        for (int dim = shape_.size() - 1; dim >= 0; dim--)
+        for (int dim = shape_->size() - 1; dim >= 0; dim--)
         {
             res += coords[dim] * step;
-            step *= shape_[dim];
+            step *= shape_->at(dim);
         }
 
-        assert(res < size_);
         return res;
     }
 
