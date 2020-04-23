@@ -1,10 +1,12 @@
 #pragma once
+
 #include <ostream>
 #include <memory>
 #include <functional>
 #include <cassert>
 #include <cstdarg>
 #include <algorithm>
+#include <any>
 
 enum class fill_type
 {
@@ -12,6 +14,13 @@ enum class fill_type
     SEQUENCE,
     ZEROS,
     ONES
+};
+
+enum class transpose
+{
+    LEFT,
+    RIGHT,
+    NO_IMPLICIT
 };
 
 template <typename T>
@@ -34,6 +43,13 @@ public:
         data_ = std::shared_ptr<T[]>(new T[size_]);
     }
 
+    template<typename ...Ts>
+    Tensor(Ts... inputs) : shape_{inputs...}
+    {
+        size_ = compute_size(shape_);
+        data_ = std::shared_ptr<T[]>(new T[size_]);
+    }
+
     Tensor(const Tensor<T>& t)
     {
         size_ = t.size_;
@@ -49,23 +65,49 @@ public:
         return *this;
     }
 
+    bool operator==(const Tensor<T>& t)
+    {
+        if (shape_ != t.get_shape())
+            return false;
+        for (int i = 0; i < size_; ++i)
+        {
+            if (data_[i] != t.data_[i])
+                return false;
+        }
+        return true;
+    }
+
     virtual ~Tensor() = default;
 
     /**
     * Getters / setters
     */
 
-    std::vector<int> get_shape() const
+    std::vector<int> get_shape(void) const
     {
         return shape_;
     }
 
-    int get_size() const
+    int get_size(void) const
     {
         return size_;
     }
 
-    T operator()(std::vector<int> coords) const
+    template<typename ...Ts>
+    T operator()(Ts&& ...coords) const
+    {
+        const std::vector<int> vec = {coords ...};
+        return (*this)(vec);
+    }
+
+    template<typename ...Ts>
+    T& operator()(Ts&& ...coords)
+    {
+        const std::vector<int> vec = {coords ...};
+        return (*this)(vec);
+    }
+
+    T operator()(const std::vector<int>& coords) const
     {
         // shape: { 3, 3 }
         // coord: { 2 }
@@ -73,7 +115,7 @@ public:
         return data_[coord_to_index(coords)];
     }
 
-    T& operator()(std::vector<int> coords)
+    T& operator()(const std::vector<int>& coords)
     {
         return data_[coord_to_index(coords)];
     }
@@ -89,6 +131,14 @@ public:
     /**
     * Operations (fill, map, op)
     */
+
+    template <typename FUNCTOR_TYPE>
+    void fill(FUNCTOR_TYPE& func)
+    {
+        assert(data_ != nullptr);
+        for (int i = 0; i < size_; ++i)
+            data_[i] = func();
+    }
 
     void fill(std::function<T(void)> value_initializer)
     {
@@ -150,14 +200,14 @@ public:
         return res;
     }
 
-    Tensor<T> op(const Tensor &right, std::function<T(T, T)> fn)
+    Tensor<T> op(const Tensor &right, std::function<T(T, T)> fn) const
     {
         assert(data_ != nullptr);
         if (shape_ != right.shape_)
             throw std::invalid_argument("Operations requires the two tensors to have the same shape.");
 
         Tensor<T> res(shape_);
-        for (int i = 0; i < get_size(); i++)
+        for (int i = 0; i < size_; i++)
             res.data_[i] = fn(data_[i], right.data_[i]);
         return res;
     }
@@ -168,55 +218,69 @@ public:
         if (shape_ != right.shape_)
             throw std::invalid_argument("Operations requires the two tensors to have the same shape.");
 
-        for (int i = 0; i < get_size(); i++)
+        for (int i = 0; i < size_; i++)
             data_[i] = fn(data_[i], right.data_[i]);
+        return *this;
+    }
+
+    Tensor<T>& op_inplace(T val, std::function<T(T, T)> fn)
+    {
+        assert(data_ != nullptr);
+
+        for (int i = 0; i < size_; i++)
+            data_[i] = fn(data_[i], val);
         return *this;
     }
 
     Tensor<T>& operator+=(const Tensor &right)
     {
-        return op_inplace(right, [](T a, T b) { return a + b; });
+        return op_inplace(right, [](const T a, const T b) { return a + b; });
     }
 
-    Tensor<T> operator+(const Tensor &right)
+    Tensor<T> operator+(const Tensor &right) const
     {
-        return op(right, [](T a, T b) { return a + b; });
+        return op(right, [](const T a, const T b) { return a + b; });
     }
 
     Tensor<T>& operator-=(const Tensor &right)
     {
-        return op_inplace(right, [](T a, T b) { return a - b; });
+        return op_inplace(right, [](const T a, const T b) { return a - b; });
     }
 
-    Tensor<T> operator-(const Tensor &right)
+    Tensor<T> operator-(const Tensor &right) const
     {
-        return op(right, [](T a, T b) { return a - b; });
+        return op(right, [](const T a, const  T b) { return a - b; });
     }
 
     Tensor<T>& operator*=(const Tensor &right)
     {
-        return op_inplace(right, [](T a, T b) { return a * b; });
+        return op_inplace(right, [](const T a, const T b) { return a * b; });
     }
 
-    Tensor<T> operator*(const Tensor &right)
+    Tensor<T>& operator*=(const T v)
     {
-        return op(right, [](T a, T b) { return a * b; });
+        return op_inplace(v, [](const T a, const  T b) { return a * b; });
+    }
+
+    Tensor<T> operator*(const Tensor &right) const
+    {
+        return op(right, [](const T a, const T b) { return a * b; });
     }
 
     Tensor<T>& operator/=(const Tensor &right)
     {
-        return op_inplace(right, [](T a, T b) { return a / b; });
+        return op_inplace(right, [](const T a, const T b) { return a / b; });
     }
 
-    Tensor<T> operator/(const Tensor &right)
+    Tensor<T> operator/(const Tensor &right) const
     {
-        return op(right, [](T a, T b) { return a / b; });
+        return op(right, [](const T a, const T b) { return a / b; });
     }
 
-    Tensor<T> get(std::vector<int> coords)
+    Tensor<T> get(std::vector<int> coords) const
     {
-        unsigned prevdim = coords.size();
-        unsigned shape_size = shape_.size();
+        int prevdim = coords.size();
+        int shape_size = shape_.size();
         assert(prevdim <= shape_size);
 
         while (coords.size() < shape_size)
@@ -225,7 +289,7 @@ public:
         int begin = coord_to_index(coords);
 
         std::vector<int> new_shape(0);
-        for (unsigned i = prevdim; i < shape_size; i++)
+        for (int i = prevdim; i < shape_size; i++)
             new_shape.push_back(shape_[i]);
         if (!new_shape.size())
             new_shape.push_back(1);
@@ -236,7 +300,7 @@ public:
         return res;
     }
 
-    Tensor<T> reduce(T subtotal_default, std::function<T(T, T)> fn)
+    Tensor<T> reduce(T subtotal_default, std::function<T(T, T)> fn) const
     {
         Tensor<T> res = *this;
         for (int i = shape_.size() - 1; i >= 0; i--)
@@ -244,7 +308,7 @@ public:
         return res;
     }
 
-    Tensor<T> reduce(std::vector<int> axis, T subtotal_default, std::function<T(T, T)> fn)
+    Tensor<T> reduce(std::vector<int> axis, T subtotal_default, std::function<T(T, T)> fn) const
     {
         Tensor<T> res = *this;
 
@@ -257,11 +321,11 @@ public:
         return res;
     }
 
-    Tensor<T> reduce(unsigned dim, T subtotal_default, std::function<T(T, T)> fn)
+    Tensor<T> reduce(int dim, T subtotal_default, std::function<T(T, T)> fn) const
     {
         // Compute output shape
         std::vector<int> output_shape;
-        for (unsigned i = 0; i < shape_.size(); i++)
+        for (int i = 0; i < shape_.size(); i++)
             if (i != dim)
                 output_shape.push_back(shape_[i]);
         if (output_shape.size() == 0)
@@ -271,12 +335,12 @@ public:
 
         // Compute the step
         int step = 1;
-        for (unsigned i = dim + 1; i < shape_.size(); i++)
+        for (int i = dim + 1; i < shape_.size(); i++)
             step *= shape_[i];
 
         // For every element of this dimension, sum what is inside
         int size_prevdim = 1;
-        for (unsigned i = 0; i < dim; i++)
+        for (int i = 0; i < dim; i++)
             size_prevdim *= shape_[i];
         for (int i = 0; i < size_prevdim; i++)
             reduce_aux(res, i, step, dim, index, subtotal_default, fn);
@@ -284,10 +348,16 @@ public:
         return res;
     }
 
-    void reduce_aux(const Tensor<T>& res, unsigned i, int step, int dim, int& index, T subtotal_default, std::function<T(T, T)> fn)
+    void reduce_aux(const Tensor<T>& res,
+                    int i,
+                    int step,
+                    int dim,
+                    int& index,
+                    T subtotal_default,
+                    std::function<T(T, T)> fn) const
     {
         int size_dim = shape_[dim];
-        unsigned begin = i * (step * size_dim);
+        int begin = i * (step * size_dim);
         for (int i = 0; i < step; i++)
         {
             T subtotal = subtotal_default;
@@ -313,7 +383,7 @@ public:
         // out: { 2, 4, 4 }
     }
 
-    Tensor<T> conv3D(const Tensor &kernel, int stride)
+    Tensor<T> conv3D(const Tensor &kernel, int stride) const
     {
         // Checks on dimensions
         assert(shape_.size() == 3 && kernel.shape_.size() == 3)
@@ -339,23 +409,26 @@ public:
     * Matrix operations (transpose, matmul)
     */
 
-    Tensor<T> transpose()
+    Tensor<T> transpose(void) const
     {
         assert(data_ != nullptr);
         assert(shape_.size() == 1 || shape_.size() == 2);
 
-        Tensor<T> res(shape_);
-        int rows = shape_[0];
-        int cols = shape_[1];
+        if (shape_.size() == 1)
+            return *this;
 
-        for (unsigned i = 0; i < rows; i++)
-            for (unsigned j = 0; j < cols; j++)
+        Tensor<T> res(shape_.at(1), shape_.at(0));
+        int rows = res.shape_[0];
+        int cols = res.shape_[1];
+
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < cols; j++)
                 res.data_[j * rows + i] = data_[i * cols + j];
 
         return res;
     }
 
-    Tensor<T> matmul(const Tensor<T>& right)
+    Tensor<T> matmul(const Tensor<T>& right) const
     {
         assert(data_ != nullptr);
         assert(shape_.size() == 1 || shape_.size() == 2);
@@ -369,12 +442,12 @@ public:
             throw std::invalid_argument("Invalid shapes for matrix multiplication.");
 
         Tensor<T> res(l_rows, r_cols);
-        for (unsigned r = 0; r < l_rows; r++)
+        for (int r = 0; r < l_rows; r++)
         {
-            for (unsigned c = 0; c < r_cols; c++)
+            for (int c = 0; c < r_cols; c++)
             {
                 T tmp = 0;
-                for (unsigned k = 0; k < l_cols; k++)
+                for (int k = 0; k < l_cols; k++)
                     tmp += data_[r * l_cols + k] * right.data_[k * r_cols + c];
                 res.data_[r * r_cols + c] = tmp;
             }
@@ -393,7 +466,7 @@ public:
         int l = shape.size() - 1;
 
         int new_line = shape.size();
-        for (int i = 0; i < t.get_size(); i++)
+        for (int i = 0; i < t.size_; i++)
         {
             // Opening
             if (i != 0 && new_line > 0)
@@ -443,7 +516,7 @@ private:
         data_ = data;
     }
 
-    int compute_size(std::vector<int> shape)
+    int compute_size(std::vector<int> shape) const
     {
         int res = 1;
         for (auto v : shape)
@@ -451,7 +524,7 @@ private:
         return res;
     }
 
-    int coord_to_index(std::vector<int> coords)
+    int coord_to_index(const std::vector<int>& coords) const
     {
         assert(coords.size() == shape_.size());
 
@@ -468,13 +541,13 @@ private:
         return res;
     }
 
-    float get_random_float(void)
+    float get_random_float(void) const
     {
         static constexpr float min = -1.0f;
         static constexpr float max = 1.0f;
 
         float d = static_cast<float>(RAND_MAX / (max - min));
 
-        return min + static_cast <float>(rand() / d);
+        return min + static_cast<float>(rand() / d);
     }
 };

@@ -1,10 +1,10 @@
 #pragma once
 
 #include "layer.hh"
-#include "../matrix/matrix.hh"
+#include "../tensor/tensor.hh"
 
 template <typename T>
-class InputLayer : public Layer<T>
+class InputLayer final : public Layer<T>
 {
 public:
     InputLayer(int nb_neurons)
@@ -13,13 +13,13 @@ public:
 
     virtual ~InputLayer() = default;
 
-    virtual Matrix<T> feedforward(const Matrix<T>& input, bool training)
+    virtual Tensor<T> feedforward(const Tensor<T>& input, bool training)
     {
         this->last_a_ = input;
         return this->next_->feedforward(input, training);
     }
 
-    void backpropagation(const Matrix<T>* const)
+    void backpropagation(const Tensor<T>* const)
     {
         return;
     }
