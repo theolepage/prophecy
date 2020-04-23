@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "../matrix/matrix.hh"
+#include "../tensor/tensor.hh"
 
 template <typename T>
 class Layer
@@ -14,9 +14,9 @@ public:
 
     virtual ~Layer() = default;
 
-    virtual Matrix<T> feedforward(const Matrix<T>& input, bool training) = 0;
+    virtual Tensor<T> feedforward(const Tensor<T>& input, bool training) = 0;
 
-    virtual void backpropagation(const Matrix<T>* const y) = 0;
+    virtual void backpropagation(const Tensor<T>* const y) = 0;
 
     virtual void compile(std::weak_ptr<Layer<T>> prev,
                             std::shared_ptr<Layer<T>> next)
@@ -27,16 +27,16 @@ public:
     }
 
     int get_nb_neurons(void) const { return nb_neurons_; }
-    Matrix<T>& get_delta(void) { return delta_; }
-    Matrix<T>& get_last_a(void) { return last_a_; }
+    Tensor<T>& get_delta(void) { return delta_; }
+    Tensor<T>& get_last_a(void) { return last_a_; }
 
 protected:
     bool compiled_;
     int nb_neurons_;
 
-    Matrix<T> last_a_;
-    Matrix<T> last_z_;
-    Matrix<T> delta_;
+    Tensor<T> last_a_;
+    Tensor<T> last_z_;
+    Tensor<T> delta_;
 
     std::weak_ptr<Layer<T>> prev_;
     std::shared_ptr<Layer<T>> next_;

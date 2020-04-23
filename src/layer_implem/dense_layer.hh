@@ -1,11 +1,11 @@
 #pragma once
 
 #include "../layer/hidden_layer.hh"
-#include "../matrix/matrix.hh"
+#include "../Tensor/Tensor.hh"
 #include "../activation_function/activation_function.hh"
 
 template <typename T>
-class DenseLayer : public HiddenLayer<T>
+class DenseLayer final : public HiddenLayer<T>
 {
 public:
     DenseLayer(int nb_neurons,
@@ -15,9 +15,9 @@ public:
 
     virtual ~DenseLayer() = default;
 
-    Matrix<T> feedforward(const Matrix<T>& input, bool training)
+    Tensor<T> feedforward(const Tensor<T>& input, bool training)
     {
-        auto z = Matrix<T>::dot(this->weights_, input);
+        auto z = this->weights_.matmul(input);
         z += this->biases_;
         auto a = z.map(this->activation_.f_);
 
@@ -32,60 +32,58 @@ public:
         return this->next_->feedforward(a, training);
     }
 
-    virtual void backpropagation(const Matrix<T>* const y)
+    void backpropagation(const Tensor<T>* const y)
     {
         if (this->prev_.expired()) // If we reach InputLayer
             return;
 
         auto next = std::dynamic_pointer_cast<HiddenLayer<T>>(this->next_);
 
-        this->last_z_.map_inplace(this->activation_.fd_); // Avoid creating a new matrix below
+        this->last_z_.map_inplace(this->activation_.fd_); // Avoid creating a new Tensor below
         if (y != nullptr)
         {
             this->last_a_ -= *y; // Same
-            this->last_a_.multiply_inplace(this->last_z_); // Same
+            this->last_a_ *= this->last_z_; // Same
             this->delta_ = this->last_a_;
         }
         else
         {
-            this->last_z_.multiply_inplace(
-                Matrix<T>::dot(next->get_weights(), next->get_delta(), transpose::LEFT)); // Same
+            this->last_z_ *= next->get_weights().transpose().matmul(next->get_delta()); // Same
             this->delta_ = this->last_z_;
         }
 
         this->delta_biases_ += this->delta_;
-        this->delta_weights_ += Matrix<T>::dot(
-                                    this->delta_, this->prev_.lock()->get_last_a(), transpose::RIGHT);
+        this->delta_weights_ += this->delta_.matmul(this->prev_.lock()->get_last_a().transpose());
         this->prev_.lock()->backpropagation(nullptr);
     }
 
     void update(T learning_rate)
     {
         // Update weights_ and biases_
-        for (int i = 0; i < this->weights_.get_rows(); i++)
-        {
-            for (int j = 0; j < this->weights_.get_cols(); j++)
-                this->weights_(i, j) -= learning_rate * this->delta_weights_(i, j);
-            this->biases_(i, 0) -= learning_rate * this->delta_biases_(i, 0);
-        }
+        this->delta_weights_ *= learning_rate;
+        this->weights_ -=  this->delta_weights_;
+        this->delta_biases_ *= learning_rate;
+        this->biases_ -= this->delta_biases_;
 
         // Reset delta_weights_ and delta_biases_
-        this->delta_weights_.fill(fill_type::ZERO);
-        this->delta_biases_.fill(fill_type::ZERO);
+        this->delta_weights_.fill(fill_type::ZEROS);
+        this->delta_biases_.fill(fill_type::ZEROS);
     }
 
     void compile(std::weak_ptr<Layer<T>> prev,
                  std::shared_ptr<Layer<T>> next)
     {
         // Initialize weights and biases
-        this->weights_ = Matrix<T>(this->nb_neurons_, prev.lock()->get_nb_neurons());
-        this->biases_ = Matrix<T>(this->nb_neurons_, 1);
-        this->weights_.fill(fill_type::RANDOM_FLOAT);
-        this->biases_.fill(fill_type::RANDOM_FLOAT);
+        this->weights_ = Tensor<T>({this->nb_neurons_, prev.lock()->get_nb_neurons()});
+        this->biases_ = Tensor<T>({this->nb_neurons_, 1});
+        this->weights_.fill(fill_type::RANDOM);
+        this->biases_.fill(fill_type::RANDOM);
 
         // Initialize delta_weights_ and delta_biases_
-        this->delta_weights_ = Matrix<T>(this->nb_neurons_, prev.lock()->get_nb_neurons());
-        this->delta_biases_ = Matrix<T>(this->nb_neurons_, 1);
+        this->delta_weights_ = Tensor<T>({this->nb_neurons_, prev.lock()->get_nb_neurons()});
+        this->delta_biases_ = Tensor<T>({this->nb_neurons_, 1});
+        this->delta_weights_.fill(fill_type::ZEROS);
+        this->delta_biases_.fill(fill_type::ZEROS);
 
         this->compiled_ = true;
         this->prev_ = prev;

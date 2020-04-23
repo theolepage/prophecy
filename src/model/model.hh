@@ -6,6 +6,7 @@
 
 #include "../layer/input_layer.hh"
 #include "../layer/hidden_layer.hh"
+#include "../tensor/tensor.hh"
 
 template <typename T = float>
 class Model
@@ -22,7 +23,7 @@ public:
         return *this;
     }
 
-    Matrix<T> predict(const Matrix<T>& input)
+    Tensor<T> predict(const Tensor<T>& input)
     {
         return layers_[0]->feedforward(input, false);
     }
@@ -44,8 +45,8 @@ public:
             layers_[i]->compile(layers_[i - 1], layers_[i + 1]);
     }
 
-    void train(std::vector<Matrix<T>>& x,
-                std::vector<Matrix<T>>& y,
+    void train(std::vector<Tensor<T>>& x,
+                std::vector<Tensor<T>>& y,
                 int epochs,
                 int batch_size)
     {
