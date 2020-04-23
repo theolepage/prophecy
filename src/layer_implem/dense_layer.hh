@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../layer/hidden_layer.hh"
-#include "../Tensor/Tensor.hh"
+#include "../tensor/tensor.hh"
 #include "../activation_function/activation_function.hh"
 
 template <typename T>

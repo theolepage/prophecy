@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Tensor/Tensor.hh"
+#include "../tensor/tensor.hh"
 #include <vector>
 #include <iostream>
 #include <fstream>
