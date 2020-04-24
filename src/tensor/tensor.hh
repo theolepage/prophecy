@@ -370,11 +370,11 @@ public:
     * Matrix operations (transpose, matmul)
     */
 
-    Tensor<T> im2col(const Tensor<T>& img, int kernel_height, int kernel_width, int padding, int stride)
+    Tensor<T> im2col(int kernel_height, int kernel_width, int padding, int stride)
     {
-        int img_channels = img.get_shape()[0];
-        int img_height = img.get_shape()[1];
-        int img_width = img.get_shape()[2];
+        int img_channels = this->shape_->at(0);
+        int img_height = this->shape_->at(1);
+        int img_width = this->shape_->at(2);
 
         int kernel_vertical_shifts = 1 + (img_height + 2 * padding - kernel_height) / stride;
         int kernel_horizontal_shifts = 1 + (img_width + 2 * padding - kernel_width) / stride;
@@ -397,7 +397,7 @@ public:
 
                     T value = 0;
                     if (y >= 0 && y < img_height && x >= 0 && x < img_width)
-                        value = img({ channel, y, x });
+                        value = (*this)({ channel, y, x });
                     res({ c, i * kernel_horizontal_shifts + j }) = value;
                 }
             }
@@ -406,7 +406,7 @@ public:
         return res;
     }
 
-    Tensor<T> col2im(const Tensor<T>& matrix, std::vector<int> img_shape, int kernel_height, int kernel_width, int padding, int stride)
+    Tensor<T> col2im(std::vector<int> img_shape, int kernel_height, int kernel_width, int padding, int stride)
     {
         int img_channels = img_shape[0];
         int img_height = img_shape[1];
@@ -432,7 +432,7 @@ public:
                     int x = j * stride - padding + kernel_offset;
 
                     if (y >= 0 && y < img_height && x >= 0 && x < img_width)
-                        res({ channel, y, x }) += matrix({ c, i * kernel_horizontal_shifts + j });
+                        res({ channel, y, x }) += (*this)({ c, i * kernel_horizontal_shifts + j });
                 }
             }
         }
