@@ -7,7 +7,7 @@
 #include <array>
 #include <stdio.h>
 
-using model_type = float;
+using dh_model_type = float;
 
 enum class set_type
 {
@@ -18,6 +18,10 @@ enum class set_type
 class DatasetHandler
 {
 public:
+    DatasetHandler()
+        : limit_(-1)
+    {}
+
     void read(const char* file, set_type type)
     {
         switch (type)
@@ -35,10 +39,10 @@ public:
     }
 
     /*template <typename MAT_TYPE = float>
-    std::vector<Tensor<MAT_TYPE>> normalize(const std::vector<Tensor<model_type>>& set, MAT_TYPE value) const
+    std::vector<Tensor<MAT_TYPE>> normalize(const std::vector<Tensor<dh_model_type>>& set, MAT_TYPE value) const
     {
         std::vector<Tensor<MAT_TYPE>> norm_set;
-        for (const Tensor<model_type>& m : set)
+        for (const Tensor<dh_model_type>& m : set)
         {
             Tensor<MAT_TYPE> mat(m.get_shape().at(0), m.get_shape().at(1));
             for (int y = 0; y < m.get_shape().at(0); ++y)
@@ -51,12 +55,12 @@ public:
         return norm_set;
     }
 
-    std::vector<Tensor<model_type>> binarize(void) const
+    std::vector<Tensor<dh_model_type>> binarize(void) const
     {
-        std::vector<Tensor<model_type>> set;
-        for (const Tensor<model_type>& t : x)
+        std::vector<Tensor<dh_model_type>> set;
+        for (const Tensor<dh_model_type>& t : x)
         {
-            Tensor<model_type> b_w(1, t.get_shape().at(1), t.get_shape().at(2));
+            Tensor<dh_model_type> b_w(1, t.get_shape().at(1), t.get_shape().at(2));
 
             for (int y = 0; y < t.get_shape().at(1); ++y)
             {
@@ -72,20 +76,30 @@ public:
         return set;
     }*/
 
-    std::vector<Tensor<model_type>>& get_training(void)
+    std::vector<Tensor<dh_model_type>>& get_training(void)
     {
         return x;
     }
 
-    std::vector<Tensor<model_type>>& get_labels(void)
+    std::vector<Tensor<dh_model_type>>& get_labels(void)
     {
         return y;
+    }
+
+    long long get_limit(void) const
+    {
+        return limit_;
+    }
+
+    void set_limit(long long limit)
+    {
+        limit_ = limit;
     }
 
 private:
     void load_cifar_10(const char* path)
     {
-        static constexpr auto nb_image = 10000;
+        auto nb_image = 10000;
         static constexpr auto image_width = 32;
         static constexpr auto image_height = 32;
         static constexpr auto channel_size = 3;
@@ -101,25 +115,29 @@ private:
         auto file_size = file.tellg();
         std::unique_ptr<char[]> buffer(new char[file_size]);
 
-        //Read the entire file at once
+        // Read the entire file at once
         file.seekg(0, std::ios::beg);
         file.read(buffer.get(), file_size);
         file.close();
+
+        // Apply limit
+        if (limit_ >= 0 and limit_ < nb_image)
+            nb_image = limit_;
 
         for (int image = 0; image < nb_image; ++image)
         {
             int offset = image * (image_height * image_width * 3 + 1);
             char value;
             {
-                Tensor<model_type> label({10, 1});
+                Tensor<dh_model_type> label({10, 1});
                 label.fill(fill_type::ZEROS);
                 value = buffer[offset];
-                label(static_cast<int>(value), 0) = static_cast<model_type>(1);
+                label(static_cast<int>(value), 0) = static_cast<dh_model_type>(1);
                 y.emplace_back(label);
             }
 
 
-            Tensor<model_type> rgb({channel_size, image_height, image_width});
+            Tensor<dh_model_type> rgb({channel_size, image_height, image_width});
 
             for (int channel = 0; channel < channel_size; ++channel)
             {
@@ -128,7 +146,7 @@ private:
                     for (int x = 0; x < image_width; ++x)
                     {
                         value = buffer[offset + x + y * image_width];
-                        rgb(channel, y, x) = static_cast<model_type>(value);
+                        rgb(channel, y, x) = static_cast<dh_model_type>(value);
                     }
                 }
             }
@@ -138,11 +156,11 @@ private:
 
     auto get_xor(unsigned a, unsigned b)
     {
-        auto mx = Tensor<model_type>({2, 1});
+        auto mx = Tensor<dh_model_type>({2, 1});
         mx(0, 0) = a;
         mx(1, 0) = b;
 
-        auto my = Tensor<model_type>({1, 1});
+        auto my = Tensor<dh_model_type>({1, 1});
         my(0, 0) = a ^ b;
 
         return std::make_pair(mx, my);
@@ -173,6 +191,7 @@ private:
         return in.tellg();
     }
 
-    std::vector<Tensor<model_type>> x;
-    std::vector<Tensor<model_type>> y;
+    std::vector<Tensor<dh_model_type>> x;
+    std::vector<Tensor<dh_model_type>> y;
+    long long limit_;
 };

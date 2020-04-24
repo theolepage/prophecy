@@ -8,8 +8,8 @@ template <typename T>
 class Layer
 {
 public:
-    Layer(int nb_neurons)
-    : nb_neurons_(nb_neurons)
+    Layer(const std::vector<int>& shape)
+        : shape_(std::make_shared<std::vector<int>>(shape))
     {}
 
     virtual ~Layer() = default;
@@ -19,24 +19,25 @@ public:
     virtual void backpropagation(const Tensor<T>* const y) = 0;
 
     virtual void compile(std::weak_ptr<Layer<T>> prev,
-                            std::shared_ptr<Layer<T>> next)
+                         std::shared_ptr<Layer<T>> next)
     {
         compiled_ = true;
         prev_ = prev;
         next_ = next;
     }
 
-    int get_nb_neurons(void) const { return nb_neurons_; }
-    Tensor<T>& get_delta(void) { return delta_; }
+    std::vector<int> get_shape(void) const { return *shape_; }
+    
     Tensor<T>& get_last_a(void) { return last_a_; }
+
+    Tensor<T>& get_last_z(void) { return last_z_; }
 
 protected:
     bool compiled_;
-    int nb_neurons_;
+    std::shared_ptr<std::vector<int>> shape_;
 
     Tensor<T> last_a_;
     Tensor<T> last_z_;
-    Tensor<T> delta_;
 
     std::weak_ptr<Layer<T>> prev_;
     std::shared_ptr<Layer<T>> next_;

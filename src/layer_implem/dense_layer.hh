@@ -8,9 +8,8 @@ template <typename T>
 class DenseLayer final : public HiddenLayer<T>
 {
 public:
-    DenseLayer(int nb_neurons,
-               const ActivationFunction<T>& activation)
-    : HiddenLayer<T>(nb_neurons, activation)
+    DenseLayer(const std::vector<int>& shape, const ActivationFunction<T>& activation)
+        : HiddenLayer<T>(shape, activation)
     {}
 
     virtual ~DenseLayer() = default;
@@ -34,9 +33,6 @@ public:
 
     void backpropagation(const Tensor<T>* const y)
     {
-        if (this->prev_.expired()) // If we reach InputLayer
-            return;
-
         auto next = std::dynamic_pointer_cast<HiddenLayer<T>>(this->next_);
 
         this->last_z_.map_inplace(this->activation_.fd_); // Avoid creating a new Tensor below
@@ -74,14 +70,14 @@ public:
                  std::shared_ptr<Layer<T>> next)
     {
         // Initialize weights and biases
-        this->weights_ = Tensor<T>({this->nb_neurons_, prev.lock()->get_nb_neurons()});
-        this->biases_ = Tensor<T>({this->nb_neurons_, 1});
+        this->weights_ = Tensor<T>({ this->shape_->at(0), prev.lock()->get_shape()[0] });
+        this->biases_ = Tensor<T>({ this->shape_->at(0), 1 });
         this->weights_.fill(fill_type::RANDOM);
         this->biases_.fill(fill_type::RANDOM);
 
         // Initialize delta_weights_ and delta_biases_
-        this->delta_weights_ = Tensor<T>({this->nb_neurons_, prev.lock()->get_nb_neurons()});
-        this->delta_biases_ = Tensor<T>({this->nb_neurons_, 1});
+        this->delta_weights_ = Tensor<T>({ this->shape_->at(0), prev.lock()->get_shape()[0] });
+        this->delta_biases_ = Tensor<T>({ this->shape_->at(0), 1 });
         this->delta_weights_.fill(fill_type::ZEROS);
         this->delta_biases_.fill(fill_type::ZEROS);
 

@@ -12,8 +12,9 @@ class HiddenLayer : public Layer<T>
 {
 public:
 
-    HiddenLayer(int nb_neurons, const ActivationFunction<T>& activation) : Layer<T>(nb_neurons)
-    , activation_(activation)
+    HiddenLayer(const std::vector<int>& shape, const ActivationFunction<T>& activation)
+        : Layer<T>(shape)
+        , activation_(activation)
     {}
 
     virtual ~HiddenLayer() = default;
@@ -22,10 +23,15 @@ public:
 
     Tensor<T>& get_weights(void) { return weights_; };
 
+    Tensor<T>& get_biases(void) { return biases_; };
+
+    Tensor<T>& get_delta(void) { return delta_; }
+
 protected:
     Tensor<T> weights_;
     Tensor<T> biases_;
 
+    Tensor<T> delta_;
     Tensor<T> delta_weights_;
     Tensor<T> delta_biases_;
 
