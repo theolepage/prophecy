@@ -370,6 +370,76 @@ public:
     * Matrix operations (transpose, matmul)
     */
 
+    Tensor<T> im2col(const Tensor<T>& img, int kernel_height, int kernel_width, int padding, int stride)
+    {
+        int img_channels = img.get_shape()[0];
+        int img_height = img.get_shape()[1];
+        int img_width = img.get_shape()[2];
+
+        int kernel_vertical_shifts = 1 + (img_height + 2 * padding - kernel_height) / stride;
+        int kernel_horizontal_shifts = 1 + (img_width + 2 * padding - kernel_width) / stride;
+        int patch = img_channels * kernel_height * kernel_width;
+
+        Tensor<T> res({ patch, kernel_vertical_shifts * kernel_horizontal_shifts });
+
+        for (int c = 0; c < patch; c++)
+        {
+            int vertical_offset = (c / kernel_width) % kernel_height;
+            int kernel_offset = c % kernel_width;
+            int channel = c / (kernel_height * kernel_width);
+
+            for (int i = 0; i < kernel_vertical_shifts; i++)
+            {
+                for (int j = 0; j < kernel_horizontal_shifts; j++)
+                {
+                    int y = i * stride - padding + vertical_offset;
+                    int x = j * stride - padding + kernel_offset;
+
+                    T value = 0;
+                    if (y >= 0 && y < img_height && x >= 0 && x < img_width)
+                        value = img({ channel, y, x });
+                    res({ c, i * kernel_horizontal_shifts + j }) = value;
+                }
+            }
+        }
+
+        return res;
+    }
+
+    Tensor<T> col2im(const Tensor<T>& matrix, std::vector<int> img_shape, int kernel_height, int kernel_width, int padding, int stride)
+    {
+        int img_channels = img_shape[0];
+        int img_height = img_shape[1];
+        int img_width = img_shape[2];
+
+        int kernel_vertical_shifts = 1 + (img_height + 2 * padding - kernel_height) / stride;
+        int kernel_horizontal_shifts = 1 + (img_width + 2 * padding - kernel_width) / stride;
+        int patch = img_channels * kernel_height * kernel_width;
+
+        Tensor<T> res(img_shape);
+
+        for (int c = 0; c < patch; c++)
+        {
+            int vertical_offset = (c / kernel_width) % kernel_height;
+            int kernel_offset = c % kernel_width;
+            int channel = c / (kernel_height * kernel_width);
+
+            for (int i = 0; i < kernel_vertical_shifts; i++)
+            {
+                for (int j = 0; j < kernel_horizontal_shifts; j++)
+                {
+                    int y = i * stride - padding + vertical_offset;
+                    int x = j * stride - padding + kernel_offset;
+
+                    if (y >= 0 && y < img_height && x >= 0 && x < img_width)
+                        res({ channel, y, x }) += matrix({ c, i * kernel_horizontal_shifts + j });
+                }
+            }
+        }
+
+        return res;
+    }
+
     Tensor<T> transpose(void) const
     {
         assert(data_ != nullptr);
