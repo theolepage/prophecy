@@ -20,6 +20,16 @@ public:
         stride_ = stride;
     }
 
+    Conv2DLayer(int nb_neurons,
+                const std::vector<int>& kernel_shape,
+                const ActivationFunction<T>& activation)
+    : HiddenLayer<T>(nb_neurons, activation)
+    {
+        kernel_shape_ = std::make_shared<std::vector<int>>(kernel_shape);
+        padding_ = 0;
+        stride_ = 1;
+    }
+
     virtual ~Conv2DLayer() = default;
 
     Tensor<T> feedforward(const Tensor<T>& input, bool training)
@@ -27,9 +37,9 @@ public:
         int kernel_height = this->weights_->get_shape()[2];
         int kernel_width = this->weights_->get_shape()[3];
         int patch = this->weights_->get_shape()[1] * kernel_height * kernel_width;
-
         Tensor<T> weights_reshaped(this->weights_);
         weights_reshaped->reshape({ this->weights_->get_shape()[0], patch });
+
         auto input_reshaped = input.im2col(kernel_height, kernel_width, this->padding_, this->stride_);
 
         auto z = weights_reshaped.matmul(input_reshaped);
@@ -40,6 +50,7 @@ public:
         {
             this->last_a_ = a;
             this->last_z_ = z;
+            this->last_a_col = input_reshaped;
         }
 
         if (this->next_ == nullptr)
@@ -49,26 +60,39 @@ public:
 
     void backpropagation(const Tensor<T>* const y)
     {
-        if (this->prev_.expired()) // If we reach InputLayer
+        if (this->prev_.expired())
             return;
 
         auto next = std::dynamic_pointer_cast<HiddenLayer<T>>(this->next_);
 
-        this->last_z_.map_inplace(this->activation_.fd_); // Avoid creating a new Tensor below
-        if (y != nullptr)
-        {
-            this->last_a_ -= *y; // Same
-            this->last_a_ *= this->last_z_; // Same
-            this->delta_ = this->last_a_;
-        }
-        else
-        {
-            this->last_z_ *= next->get_weights().transpose().matmul(next->get_delta()); // Same
-            this->delta_ = this->last_z_;
-        }
+        // Reshape next.delta_
+        Tensor<T> next_delta_reshaped(next->get_delta());
+        next_delta_reshaped->reshape({
+                next->get_delta()->get_shape()[0],
+                next->get_delta()->get_shape()[1] * next->get_delta()->get_shape()[2]
+        });
 
-        this->delta_biases_ += this->delta_;
-        this->delta_weights_ += this->delta_.matmul(this->prev_.lock()->get_last_a().transpose());
+        // Reshape next.weights_
+        int kernel_height = next->get_weights()->get_shape()[2];
+        int kernel_width = next->get_weights()->get_shape()[3];
+        int patch = next->get_weights()->get_shape()[1] * kernel_height * kernel_width;
+        Tensor<T> next_weights_reshaped(next->get_weights());
+        next_weights_reshaped->reshape({ next->get_weights()->get_shape()[0], patch });
+
+        // Compute delta
+        auto delta_col = next_weights_reshaped.transpose().matmul(next_delta_reshaped);
+        this->delta_ = delta_col.col2im(this->last_a_.get_shape(), kernel_height, kernel_width, this->padding_, this->stride_);
+        this->delta_ *= this->last_z_.map_inplace(this->activation_.fd_);
+
+        // Compute db
+        this->delta_biases_ += this->delta_->reduce({ 1, 2 }, 0, [](T a, T b) {
+            return a + b;
+        });
+
+        // Compute dw
+        auto dw = delta_col.matmul(this->prev_.lock()->get_last_a()->transpose());
+        this->delta_weights_ += dw.reshape(this->weights_->get_shape());
+
         this->prev_.lock()->backpropagation(nullptr);
     }
 
@@ -114,4 +138,6 @@ private:
     std::shared_ptr<std::vector<int>> kernel_shape_;
     int padding_;
     int stride_;
+
+    Tensor<T> last_a_col_;
 };
