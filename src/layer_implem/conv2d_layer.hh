@@ -12,16 +12,15 @@ public:
                 int padding,
                 int stride,
                 const ActivationFunction<T>& activation)
-    : ProcessingLayer<T>(shape, activation)
-    , padding_(padding)
-    , stride_(stride)
+        : ProcessingLayer<T>(shape, activation)
+        , padding_(padding)
+        , stride_(stride)
     {}
 
-    Conv2DLayer(const std::vector<int>& shape,
-                const ActivationFunction<T>& activation)
-    : ProcessingLayer<T>(shape, activation)
-    , padding_(0)
-    , stride_(1)
+    Conv2DLayer(const std::vector<int>& shape, const ActivationFunction<T>& activation)
+        : ProcessingLayer<T>(shape, activation)
+        , padding_(0)
+        , stride_(1)
     {}
 
     virtual ~Conv2DLayer() = default;
@@ -60,51 +59,42 @@ public:
         return this->next_->feedforward(a, training);
     }
 
-    void backpropagation(const Tensor<T>* const)
+    void backpropagation(Tensor<T>& delta)
     {
-        auto next = std::dynamic_pointer_cast<ProcessingLayer<T>>(this->next_);
-
-        // Reshape next.delta_
-        Tensor<T> next_delta_reshaped(next->get_delta());
-        next_delta_reshaped.reshape({
-                next->get_delta().get_shape()[0],
-                next->get_delta().get_shape()[1] * next->get_delta().get_shape()[2]
-        });
-
-        // Reshape next.weights_
-        int kernel_height = next->get_weights().get_shape()[2];
-        int kernel_width = next->get_weights().get_shape()[3];
-        int patch = next->get_weights().get_shape()[1] * kernel_height * kernel_width;
-        Tensor<T> next_weights_reshaped(next->get_weights());
-        next_weights_reshaped.reshape({ next->get_weights().get_shape()[0], patch });
-
-        // Compute delta
-        auto delta_col = next_weights_reshaped.transpose().matmul(next_delta_reshaped);
-        this->delta_ = delta_col.col2im(this->last_a_.get_shape(), kernel_height, kernel_width, this->padding_, this->stride_);
-        this->delta_ *= this->last_z_.map_inplace(this->activation_.fd_);
+        auto prev = this->prev_.lock();
+        
+        this->last_z_.map_inplace(this->activation_.fd_);
+        delta *= this->last_z_;
 
         // Compute db
-        this->delta_biases_ += this->delta_.reduce({ 1, 2 }, 0, [](T a, T b) {
-            return a + b;
-        });
+        this->delta_biases_ += delta.sum({ 1, 2 }, 0);
 
         // Compute dw
-        auto dw = delta_col.matmul(this->prev_.lock()->get_last_a().transpose());
+        Tensor<T> delta_reshaped(delta);
+        delta_reshaped.reshape({
+                delta.get_shape()[0],
+                delta.get_shape()[1] * delta.get_shape()[2]
+        });
+        auto dw = delta_reshaped.matmul(last_a_col_.transpose());
         this->delta_weights_ += dw.reshape(this->weights_.get_shape());
 
-        this->prev_.lock()->backpropagation(nullptr);
+        // Compute delta
+        int kernel_height = this->weights_.get_shape()[2];
+        int kernel_width = this->weights_.get_shape()[3];
+        int patch = this->weights_.get_shape()[1] * kernel_height * kernel_width;
+        Tensor<T> weights_reshaped(this->weights_);
+        weights_reshaped.reshape({ this->weights_.get_shape()[0], patch });
+
+        auto delta_col = weights_reshaped.transpose().matmul(delta_reshaped);
+        delta = delta_col.col2im(prev->get_last_a().get_shape(), kernel_height, kernel_width, this->padding_, this->stride_);
+        
+        prev->backpropagation(delta);
     }
 
-    void compile(std::weak_ptr<Layer<T>> prev,
-                 std::shared_ptr<Layer<T>> next)
+    void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
     {
         // Initialize weights and biases
-        this->weights_ = Tensor<T>({
-                this->shape_->at(0),
-                this->shape_->at(1),
-                this->shape_->at(2),
-                this->shape_->at(3)
-        });
+        this->weights_ = Tensor<T>(*this->shape_);
         this->biases_ = Tensor<T>({ this->shape_->at(0) });
         this->weights_.fill(fill_type::RANDOM);
         this->biases_.fill(fill_type::ZEROS);

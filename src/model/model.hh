@@ -75,7 +75,8 @@ public:
                 for (size_t l = 1; l < layers_.size(); l++)
                 {
                     auto layer = std::dynamic_pointer_cast<ProcessingLayer<T>>(layers_[l]);
-                    layer->update(learning_rate_);
+                    if (layer != nullptr)
+                        layer->update(learning_rate_);
                 }
             }
         }

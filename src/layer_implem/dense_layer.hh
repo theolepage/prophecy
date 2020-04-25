@@ -38,17 +38,15 @@ public:
         this->last_z_.map_inplace(this->activation_.fd_);
         delta *= this->last_z_;
 
+        // Compute db and dw
         this->delta_biases_ += delta;
         this->delta_weights_ += delta.matmul(prev->get_last_a().transpose());
     
-        if (std::dynamic_pointer_cast<InputLayer<T>>(prev) != nullptr) // we reached input layer
+        // Stop backpropagation if we reach InputLayer
+        if (std::dynamic_pointer_cast<InputLayer<T>>(prev) != nullptr)
             return;
-        
-        // weights: { 10, 3072 }
-        // delta  : { 10, 1 }
 
-        // new delta : { 3072, 1 }
-
+        // Compute delta for previous layer and continue backpropagation
         delta = this->weights_.transpose().matmul(delta);
         prev->backpropagation(delta);
     }

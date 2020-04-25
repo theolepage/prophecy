@@ -38,23 +38,20 @@ public:
         }
     }
 
-    /*template <typename MAT_TYPE = float>
+    template <typename MAT_TYPE = float>
     std::vector<Tensor<MAT_TYPE>> normalize(const std::vector<Tensor<dh_model_type>>& set, MAT_TYPE value) const
     {
         std::vector<Tensor<MAT_TYPE>> norm_set;
         for (const Tensor<dh_model_type>& m : set)
         {
-            Tensor<MAT_TYPE> mat(m.get_shape().at(0), m.get_shape().at(1));
-            for (int y = 0; y < m.get_shape().at(0); ++y)
-            {
-                for (int x = 0; x < m.get_shape().at(1); ++x)
-                    mat(y, x) = m(y, x) / value;
-            }
-            norm_set.emplace_back(mat);
+            Tensor<dh_model_type> out(m);
+            out /= value;
+            norm_set.emplace_back(out);
         }
         return norm_set;
     }
 
+    /*
     std::vector<Tensor<dh_model_type>> binarize(void) const
     {
         std::vector<Tensor<dh_model_type>> set;

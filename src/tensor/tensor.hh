@@ -312,6 +312,16 @@ public:
         return res;
     }
 
+    Tensor<T> sum(std::vector<int> axis, T subtotal_default)
+    {
+        return reduce(axis, subtotal_default, [](T a, T b) { return a + b; });
+    }
+
+    Tensor<T> sum(T subtotal_default)
+    {
+        return reduce(subtotal_default, [](T a, T b) { return a + b; });
+    }
+
     Tensor<T> reduce(T subtotal_default, std::function<T(T, T)> fn) const
     {
         Tensor<T> res = *this;
@@ -457,7 +467,7 @@ public:
     Tensor<T> transpose(void) const
     {
         assert(data_ != nullptr);
-        if (shape_->size() > 2)
+        if (shape_->size() != 2)
             throw "Invalid shape for matrix transpose.";
 
         Tensor<T> res({shape_->at(1), shape_->at(0)});
@@ -474,7 +484,7 @@ public:
     Tensor<T> matmul(const Tensor<T>& right) const
     {
         assert(data_ != nullptr);
-        if (shape_->size() > 2)
+        if (shape_->size() != 2)
             throw "Invalid shape for matrix multiplication.";
 
         int l_rows = shape_->at(0);
