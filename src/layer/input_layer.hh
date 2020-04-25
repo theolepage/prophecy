@@ -19,7 +19,7 @@ public:
         return this->next_->feedforward(input, training);
     }
 
-    void backpropagation(const Tensor<T>* const)
+    void backpropagation(Tensor<T>&)
     {
         return;
     }

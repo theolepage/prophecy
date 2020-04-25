@@ -1,15 +1,15 @@
 #pragma once
 
-#include "../layer/hidden_layer.hh"
+#include "../layer/processing_layer.hh"
 #include "../tensor/tensor.hh"
 #include "../activation_function/activation_function.hh"
 
 template <typename T>
-class DenseLayer final : public HiddenLayer<T>
+class DenseLayer final : public ProcessingLayer<T>
 {
 public:
     DenseLayer(const std::vector<int>& shape, const ActivationFunction<T>& activation)
-        : HiddenLayer<T>(shape, activation)
+        : ProcessingLayer<T>(shape, activation)
     {}
 
     virtual ~DenseLayer() = default;
@@ -31,43 +31,29 @@ public:
         return this->next_->feedforward(a, training);
     }
 
-    void backpropagation(const Tensor<T>* const y)
+    void backpropagation(Tensor<T>& delta)
     {
-        auto next = std::dynamic_pointer_cast<HiddenLayer<T>>(this->next_);
+        auto prev = this->prev_.lock();
 
-        this->last_z_.map_inplace(this->activation_.fd_); // Avoid creating a new Tensor below
-        if (y != nullptr)
-        {
-            this->last_a_ -= *y; // Same
-            this->last_a_ *= this->last_z_; // Same
-            this->delta_ = this->last_a_;
-        }
-        else
-        {
-            this->last_z_ *= next->get_weights().transpose().matmul(next->get_delta()); // Same
-            this->delta_ = this->last_z_;
-        }
+        this->last_z_.map_inplace(this->activation_.fd_);
+        delta *= this->last_z_;
 
-        this->delta_biases_ += this->delta_;
-        this->delta_weights_ += this->delta_.matmul(this->prev_.lock()->get_last_a().transpose());
-        this->prev_.lock()->backpropagation(nullptr);
+        this->delta_biases_ += delta;
+        this->delta_weights_ += delta.matmul(prev->get_last_a().transpose());
+    
+        if (std::dynamic_pointer_cast<InputLayer<T>>(prev) != nullptr) // we reached input layer
+            return;
+        
+        // weights: { 10, 3072 }
+        // delta  : { 10, 1 }
+
+        // new delta : { 3072, 1 }
+
+        delta = this->weights_.transpose().matmul(delta);
+        prev->backpropagation(delta);
     }
 
-    void update(T learning_rate)
-    {
-        // Update weights_ and biases_
-        this->delta_weights_ *= learning_rate;
-        this->weights_ -=  this->delta_weights_;
-        this->delta_biases_ *= learning_rate;
-        this->biases_ -= this->delta_biases_;
-
-        // Reset delta_weights_ and delta_biases_
-        this->delta_weights_.fill(fill_type::ZEROS);
-        this->delta_biases_.fill(fill_type::ZEROS);
-    }
-
-    void compile(std::weak_ptr<Layer<T>> prev,
-                 std::shared_ptr<Layer<T>> next)
+    void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
     {
         // Initialize weights and biases
         this->weights_ = Tensor<T>({ this->shape_->at(0), prev.lock()->get_shape()[0] });
@@ -76,8 +62,8 @@ public:
         this->biases_.fill(fill_type::RANDOM);
 
         // Initialize delta_weights_ and delta_biases_
-        this->delta_weights_ = Tensor<T>({ this->shape_->at(0), prev.lock()->get_shape()[0] });
-        this->delta_biases_ = Tensor<T>({ this->shape_->at(0), 1 });
+        this->delta_weights_ = Tensor<T>(this->weights_.get_shape());
+        this->delta_biases_ = Tensor<T>(this->biases_.get_shape());
         this->delta_weights_.fill(fill_type::ZEROS);
         this->delta_biases_.fill(fill_type::ZEROS);
 

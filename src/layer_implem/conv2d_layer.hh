@@ -1,25 +1,25 @@
 #pragma once
 
-#include "../layer/hidden_layer.hh"
+#include "../layer/processing_layer.hh"
 #include "../tensor/tensor.hh"
 #include "../activation_function/activation_function.hh"
 
 template <typename T>
-class Conv2DLayer final : public HiddenLayer<T>
+class Conv2DLayer final : public ProcessingLayer<T>
 {
 public:
     Conv2DLayer(const std::vector<int>& shape,
                 int padding,
                 int stride,
                 const ActivationFunction<T>& activation)
-    : HiddenLayer<T>(shape, activation)
+    : ProcessingLayer<T>(shape, activation)
     , padding_(padding)
     , stride_(stride)
     {}
 
     Conv2DLayer(const std::vector<int>& shape,
                 const ActivationFunction<T>& activation)
-    : HiddenLayer<T>(shape, activation)
+    : ProcessingLayer<T>(shape, activation)
     , padding_(0)
     , stride_(1)
     {}
@@ -62,7 +62,7 @@ public:
 
     void backpropagation(const Tensor<T>* const)
     {
-        auto next = std::dynamic_pointer_cast<HiddenLayer<T>>(this->next_);
+        auto next = std::dynamic_pointer_cast<ProcessingLayer<T>>(this->next_);
 
         // Reshape next.delta_
         Tensor<T> next_delta_reshaped(next->get_delta());
@@ -93,19 +93,6 @@ public:
         this->delta_weights_ += dw.reshape(this->weights_.get_shape());
 
         this->prev_.lock()->backpropagation(nullptr);
-    }
-
-    void update(T learning_rate)
-    {
-        // Update weights_ and biases_
-        this->delta_weights_ *= learning_rate;
-        this->weights_ -=  this->delta_weights_;
-        this->delta_biases_ *= learning_rate;
-        this->biases_ -= this->delta_biases_;
-
-        // Reset delta_weights_ and delta_biases_
-        this->delta_weights_.fill(fill_type::ZEROS);
-        this->delta_biases_.fill(fill_type::ZEROS);
     }
 
     void compile(std::weak_ptr<Layer<T>> prev,

@@ -1,11 +1,12 @@
 #include <iostream>
 #include <memory>
 
+#include "tensor/tensor.hh"
 #include "model/model.hh"
 #include "layer_implem/dense_layer.hh"
 #include "layer_implem/conv2d_layer.hh"
+#include "layer_implem/flatten_layer.hh"
 #include "dataset_handler/dataset_handler.hh"
-#include "tensor/tensor.hh"
 
 using model_type = float;
 

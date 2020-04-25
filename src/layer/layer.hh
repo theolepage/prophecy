@@ -16,21 +16,26 @@ public:
 
     virtual Tensor<T> feedforward(const Tensor<T>& input, bool training) = 0;
 
-    virtual void backpropagation(const Tensor<T>* const y) = 0;
+    virtual void backpropagation(Tensor<T>& delta) = 0;
 
-    virtual void compile(std::weak_ptr<Layer<T>> prev,
-                         std::shared_ptr<Layer<T>> next)
+    virtual void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
     {
-        compiled_ = true;
-        prev_ = prev;
-        next_ = next;
+        this->compiled_ = true;
+        this->prev_ = prev;
+        this->next_ = next;
     }
 
-    std::vector<int> get_shape(void) const { return *shape_; }
-    
-    Tensor<T>& get_last_a(void) { return last_a_; }
+    virtual Tensor<T>& cost(const Tensor<T>* const y)
+    {
+        this->last_a_ -= *y;
+        return this->last_a_;
+    }
 
-    Tensor<T>& get_last_z(void) { return last_z_; }
+    std::vector<int> get_shape(void) const { return *this->shape_; }
+    
+    Tensor<T>& get_last_a(void) { return this->last_a_; }
+
+    Tensor<T>& get_last_z(void) { return this->last_z_; }
 
 protected:
     bool compiled_;

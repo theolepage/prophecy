@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "../layer/input_layer.hh"
-#include "../layer/hidden_layer.hh"
+#include "../layer/processing_layer.hh"
 #include "../tensor/tensor.hh"
 
 template <typename T = float>
@@ -64,14 +64,17 @@ public:
                 for (int k = 0; k < batch_size && i < static_cast<int>(x.size()); k++)
                 {
                     layers_[0]->feedforward(x[i], true);
-                    layers_[layers_.size() - 1]->backpropagation(&y[i]);
-                    ++i;
+
+                    auto last_layer = layers_[layers_.size() - 1];
+                    auto delta = last_layer->cost(&y[i]);
+                    last_layer->backpropagation(delta);
+                    i++;
                 }
 
                 // At the end of batch, update weights_ and biases_
                 for (size_t l = 1; l < layers_.size(); l++)
                 {
-                    auto layer = std::dynamic_pointer_cast<HiddenLayer<T>>(layers_[l]);
+                    auto layer = std::dynamic_pointer_cast<ProcessingLayer<T>>(layers_[l]);
                     layer->update(learning_rate_);
                 }
             }
