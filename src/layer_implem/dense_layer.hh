@@ -41,10 +41,6 @@ public:
         // Compute db and dw
         this->delta_biases_ += delta;
         this->delta_weights_ += delta.matmul(prev->get_last_a().transpose());
-    
-        // Stop backpropagation if we reach InputLayer
-        if (std::dynamic_pointer_cast<InputLayer<T>>(prev) != nullptr)
-            return;
 
         // Compute delta for previous layer and continue backpropagation
         delta = this->weights_.transpose().matmul(delta);

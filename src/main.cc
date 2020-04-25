@@ -4,7 +4,8 @@
 #include "tensor/tensor.hh"
 #include "model/model.hh"
 #include "layer_implem/dense_layer.hh"
-#include "layer_implem/conv2d_layer.hh"
+#include "layer_implem/conv_2d_layer.hh"
+#include "layer_implem/max_pooling_2d_layer.hh"
 #include "layer_implem/flatten_layer.hh"
 #include "dataset_handler/dataset_handler.hh"
 
@@ -49,8 +50,13 @@ static void cifar_10_example(void)
 
     // Create model
     model.add(new InputLayer<model_type>({ 3, 32, 32 }));
-    model.add(new Conv2DLayer<model_type>({ 8, 3, 3, 3 }, s));
-    model.add(new FlattenLayer<model_type>({ 7200, 1 }));
+
+    model.add(new Conv2DLayer<model_type>({ 32, 3, 3, 3 }, s));
+    model.add(new Conv2DLayer<model_type>({ 64, 32, 3, 3 }, s));
+    model.add(new MaxPooling2DLayer<model_type>({ 2, 2 }, 0, 2));
+
+    model.add(new FlattenLayer<model_type>({ 588, 1 }));
+    model.add(new DenseLayer<model_type>({ 128 }, s));
     model.add(new DenseLayer<model_type>({ 10 }, s));
 
     // Create dataset

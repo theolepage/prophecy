@@ -68,7 +68,7 @@ public:
 
     bool operator==(const Tensor<T>& t)
     {
-        if (shape_ != t.get_shape())
+        if (*shape_ != t.get_shape())
             return false;
         for (int i = 0; i < size_; ++i)
         {
@@ -204,7 +204,7 @@ public:
         if (*shape_ != *right.shape_)
             throw std::invalid_argument("Operations requires the two tensors to have the same shape.");
 
-        Tensor<T> res(shape_);
+        Tensor<T> res(*shape_);
         for (long long i = offset_; i < size_; i++)
             res.data_[i] = fn(data_[i], right.data_[i]);
         return res;
