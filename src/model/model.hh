@@ -30,7 +30,7 @@ public:
 
     virtual ~Model() = default;
 
-    void compile(T learning_rate)
+    void compile(double learning_rate)
     {
         learning_rate_ = learning_rate;
         compiled_ = true;
@@ -57,7 +57,7 @@ public:
         {
             // Determine batches
             int i = 0;
-            int nb_batches = ceil(x.size() / batch_size);
+            int nb_batches = ceil(1.0f * x.size() / batch_size);
             for (int batch = 0; batch < nb_batches; batch++)
             {
                 // For each batch, compute delta weights and biases
@@ -88,6 +88,6 @@ public:
 
 private:
     bool compiled_;
-    T learning_rate_;
+    double learning_rate_;
     std::vector<std::shared_ptr<Layer<T>>> layers_;
 };
