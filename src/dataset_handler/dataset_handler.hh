@@ -124,9 +124,9 @@ private:
         for (int image = 0; image < nb_image; ++image)
         {
             int offset = image * (image_height * image_width * 3 + 1);
-            char value;
+            unsigned char value;
             {
-                Tensor<dh_model_type> label({10, 1});
+                Tensor<dh_model_type> label({ 10, 1 });
                 label.fill(fill_type::ZEROS);
                 value = buffer[offset];
                 label(static_cast<int>(value), 0) = static_cast<dh_model_type>(1);
@@ -134,7 +134,7 @@ private:
             }
 
 
-            Tensor<dh_model_type> rgb({channel_size, image_height, image_width});
+            Tensor<dh_model_type> rgb({ channel_size, image_height, image_width });
 
             for (int channel = 0; channel < channel_size; ++channel)
             {
@@ -142,7 +142,7 @@ private:
                 {
                     for (int x = 0; x < image_width; ++x)
                     {
-                        value = buffer[offset + x + y * image_width];
+                        value = buffer[1 + offset + y * image_width + channel * (image_width * image_height) + x];
                         rgb(channel, y, x) = static_cast<dh_model_type>(value);
                     }
                 }

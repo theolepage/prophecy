@@ -46,7 +46,7 @@ static void cifar_10_example(void)
     SigmoidActivationFunction s = SigmoidActivationFunction<model_type>();
     ReLUActivationFunction r = ReLUActivationFunction<model_type>();
     DatasetHandler dh;
-    dh.set_limit(1);
+    dh.set_limit(100);
     dh.read("datasets/cifar-10-batches-bin/data_batch_1.bin", set_type::CIFAR_10);
 
     // Create model
@@ -61,16 +61,19 @@ static void cifar_10_example(void)
     model.add(new DenseLayer<model_type>(10, s));
 
     // Create dataset
-    auto x_train = dh.normalize<model_type>(dh.get_training(), static_cast<model_type>(255));
-    auto y_train = dh.normalize<model_type>(dh.get_labels(), static_cast<model_type>(1)); // Just to go from byte to float
-
+    auto x_train = dh.get_training();
+    auto y_train = dh.get_labels();
+    // auto x_train = dh.normalize<model_type>(dh.get_training(), static_cast<model_type>(255));
+    // auto y_train = dh.normalize<model_type>(dh.get_labels(), static_cast<model_type>(1)); // Just to go from byte to float
+    
     // Train model
-    model.compile(0.01);
-    model.train(x_train, y_train, 10, 64);
+    model.compile(0.1);
+    model.train(x_train, y_train, 10, 128);
 
     auto res = model.predict(x_train.at(0));
+    std::cout << x_train[0];
     std::cout << res;
-    std::cout << y_train.at(0);
+    std::cout << y_train[0];
 }
 
 int main(void)
