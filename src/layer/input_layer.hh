@@ -7,8 +7,8 @@ template <typename T>
 class InputLayer final : public Layer<T>
 {
 public:
-    InputLayer(const std::vector<int>& shape)
-        : Layer<T>(shape)
+    InputLayer(const std::vector<int>& out_shape)
+        : Layer<T>(out_shape)
     {}
 
     virtual ~InputLayer() = default;

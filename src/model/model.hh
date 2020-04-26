@@ -32,17 +32,22 @@ public:
 
     void compile(double learning_rate)
     {
+        if (layers_.size() < 2)
+            throw std::invalid_argument("Model must be composed of at least 2 layers to compile.");
+
         learning_rate_ = learning_rate;
         compiled_ = true;
 
-        if (layers_.size() >= 2)
-        {
-            int last = layers_.size() - 1;
-            layers_[0]->compile(std::weak_ptr<Layer<T>>(), layers_[1]);
-            layers_[last]->compile(layers_[last - 1], nullptr);
-        }
+        // Compile first layer
+        layers_[0]->compile(std::weak_ptr<Layer<T>>(), layers_[1]);
+
+        // Compile all layers from last to first
         for (size_t i = 1; i < layers_.size() - 1; i++)
             layers_[i]->compile(layers_[i - 1], layers_[i + 1]);
+
+        // Compile last layer
+        int last = layers_.size() - 1;
+        layers_[last]->compile(layers_[last - 1], nullptr);
     }
 
     void train(std::vector<Tensor<T>>& x,
@@ -68,6 +73,7 @@ public:
                     auto last_layer = layers_[layers_.size() - 1];
                     auto delta = last_layer->cost(&y[i]);
                     last_layer->backpropagation(delta);
+
                     i++;
                 }
 
@@ -79,6 +85,8 @@ public:
                         layer->update(learning_rate_);
                 }
             }
+
+            std::cout << "Epoch " << epoch << " completed.\n";
         }
     }
 

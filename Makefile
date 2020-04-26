@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -Werror
+CXXFLAGS = -std=c++17 -O3 -Wall -Wextra -pedantic -Werror
 
 OBJS = $(addprefix src/, main.o)
 OBJS_TESTS = $(addprefix tests/, test_tensor.o)
@@ -9,7 +9,7 @@ TARGET_TESTS = test
 
 all: $(TARGET)
 
-debug: CXXFLAGS+= -g -fsanitize=address
+debug: CXXFLAGS+= -g #-fsanitize=address
 debug: $(TARGET)
 
 $(TARGET): $(OBJS)

@@ -11,9 +11,9 @@ template <typename T>
 class ProcessingLayer : public Layer<T>
 {
 public:
-
-    ProcessingLayer(const std::vector<int>& shape, const ActivationFunction<T>& activation)
-        : Layer<T>(shape)
+    ProcessingLayer(int nb_neurons, const ActivationFunction<T>& activation)
+        : Layer<T>()
+        , nb_neurons_(nb_neurons)
         , activation_(activation)
     {}
 
@@ -33,6 +33,8 @@ public:
     }
 
 protected:
+    int nb_neurons_;
+
     Tensor<T> weights_;
     Tensor<T> biases_;
 

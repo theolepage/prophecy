@@ -8,11 +8,34 @@ template <typename T>
 class DenseLayer final : public ProcessingLayer<T>
 {
 public:
-    DenseLayer(const std::vector<int>& shape, const ActivationFunction<T>& activation)
-        : ProcessingLayer<T>(shape, activation)
+    DenseLayer(int nb_neurons, const ActivationFunction<T>& activation)
+        : ProcessingLayer<T>(nb_neurons, activation)
     {}
 
     virtual ~DenseLayer() = default;
+
+    void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
+    {
+        // Determine output shape
+        std::vector<int> out_shape = { this->nb_neurons_ };
+        this->out_shape_ = std::make_shared<std::vector<int>>(out_shape);
+
+        // Initialize weights and biases
+        this->weights_ = Tensor<T>({ this->nb_neurons_, prev.lock()->get_out_shape()[0] });
+        this->biases_ = Tensor<T>({ this->nb_neurons_, 1 });
+        this->weights_.fill(fill_type::RANDOM);
+        this->biases_.fill(fill_type::RANDOM);
+
+        // Initialize delta_weights_ and delta_biases_
+        this->delta_weights_ = Tensor<T>(this->weights_.get_shape());
+        this->delta_biases_ = Tensor<T>(this->biases_.get_shape());
+        this->delta_weights_.fill(fill_type::ZEROS);
+        this->delta_biases_.fill(fill_type::ZEROS);
+
+        this->compiled_ = true;
+        this->prev_ = prev;
+        this->next_ = next;
+    }
 
     Tensor<T> feedforward(const Tensor<T>& input, bool training)
     {
@@ -45,25 +68,6 @@ public:
         // Compute delta for previous layer and continue backpropagation
         delta = this->weights_.transpose().matmul(delta);
         prev->backpropagation(delta);
-    }
-
-    void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
-    {
-        // Initialize weights and biases
-        this->weights_ = Tensor<T>({ this->shape_->at(0), prev.lock()->get_shape()[0] });
-        this->biases_ = Tensor<T>({ this->shape_->at(0), 1 });
-        this->weights_.fill(fill_type::RANDOM);
-        this->biases_.fill(fill_type::RANDOM);
-
-        // Initialize delta_weights_ and delta_biases_
-        this->delta_weights_ = Tensor<T>(this->weights_.get_shape());
-        this->delta_biases_ = Tensor<T>(this->biases_.get_shape());
-        this->delta_weights_.fill(fill_type::ZEROS);
-        this->delta_biases_.fill(fill_type::ZEROS);
-
-        this->compiled_ = true;
-        this->prev_ = prev;
-        this->next_ = next;
     }
 
 };

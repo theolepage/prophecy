@@ -44,31 +44,33 @@ static void cifar_10_example(void)
 {
     Model<model_type> model = Model<model_type>();
     SigmoidActivationFunction s = SigmoidActivationFunction<model_type>();
+    ReLUActivationFunction r = ReLUActivationFunction<model_type>();
     DatasetHandler dh;
-    dh.set_limit(10);
+    dh.set_limit(1);
     dh.read("datasets/cifar-10-batches-bin/data_batch_1.bin", set_type::CIFAR_10);
 
     // Create model
     model.add(new InputLayer<model_type>({ 3, 32, 32 }));
 
-    model.add(new Conv2DLayer<model_type>({ 32, 3, 3, 3 }, s));
-    model.add(new Conv2DLayer<model_type>({ 64, 32, 3, 3 }, s));
+    model.add(new Conv2DLayer<model_type>(32, { 3, 3 }, r));
+    model.add(new Conv2DLayer<model_type>(64, { 3, 3 }, r));
     model.add(new MaxPooling2DLayer<model_type>({ 2, 2 }, 0, 2));
 
-    model.add(new FlattenLayer<model_type>({ 588, 1 }));
-    model.add(new DenseLayer<model_type>({ 128 }, s));
-    model.add(new DenseLayer<model_type>({ 10 }, s));
+    model.add(new FlattenLayer<model_type>());
+    model.add(new DenseLayer<model_type>(128, s));
+    model.add(new DenseLayer<model_type>(10, s));
 
     // Create dataset
     auto x_train = dh.normalize<model_type>(dh.get_training(), static_cast<model_type>(255));
     auto y_train = dh.normalize<model_type>(dh.get_labels(), static_cast<model_type>(1)); // Just to go from byte to float
 
     // Train model
-    model.compile(0.1);
-    model.train(x_train, y_train, 1, 1);
+    model.compile(0.01);
+    model.train(x_train, y_train, 10, 64);
 
-    auto res = model.predict(dh.get_training().at(0));
+    auto res = model.predict(x_train.at(0));
     std::cout << res;
+    std::cout << y_train.at(0);
 }
 
 int main(void)

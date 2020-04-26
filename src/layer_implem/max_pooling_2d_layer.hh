@@ -7,21 +7,38 @@ template <typename T>
 class MaxPooling2DLayer final : public Layer<T>
 {
 public:
-    MaxPooling2DLayer(const std::vector<int>& shape,
+    MaxPooling2DLayer(const std::vector<int>& kernel_shape,
                       int padding,
                       int stride)
-        : Layer<T>(shape)
+        : Layer<T>()
+        , kernel_shape_(std::make_shared<std::vector<int>>(kernel_shape))
         , padding_(padding)
         , stride_(stride)
     {}
 
-    MaxPooling2DLayer(const std::vector<int>& shape)
-        : Layer<T>(shape)
+    MaxPooling2DLayer(const std::vector<int>& kernel_shape)
+        : Layer<T>()
+        , kernel_shape_(std::make_shared<std::vector<int>>(kernel_shape))
         , padding_(0)
         , stride_(1)
     {}
 
     virtual ~MaxPooling2DLayer() = default;
+
+    void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
+    {
+        // Determine output shape
+        auto prev_shape = prev.lock()->get_out_shape();
+        int c = prev_shape[0];
+        int h = 1 + (prev_shape[1] + 2 * this->padding_ - this->kernel_shape_->at(0)) / this->stride_;
+        int w = 1 + (prev_shape[2] + 2 * this->padding_ - this->kernel_shape_->at(1)) / this->stride_;
+        std::vector<int> out_shape({ c, h, w });
+        this->out_shape_ = std::make_shared<std::vector<int>>(out_shape);
+
+        this->compiled_ = true;
+        this->prev_ = prev;
+        this->next_ = next;
+    }
 
     Tensor<T> feedforward(const Tensor<T>& input, bool training)
     {
@@ -29,8 +46,8 @@ public:
         int height = input.get_shape()[1];
         int width = input.get_shape()[2];
 
-        int kernel_height = this->shape_->at(0);
-        int kernel_width = this->shape_->at(1);
+        int kernel_height = this->kernel_shape_->at(0);
+        int kernel_width = this->kernel_shape_->at(1);
 
         int out_rows = (height + 2 * this->padding_ - kernel_height) / this->stride_ + 1;
         int out_cols = (width + 2 * this->padding_ - kernel_width) / this->stride_ + 1;
@@ -44,7 +61,7 @@ public:
                 for (int j = 0; j < out_cols; j++)
                 {
                     int maximum = 0;
-                    Coord3D maximum_coords = Coord3D();
+                    Coord3D maximum_coords = Coord3D(0, 0, 0);
                     for (int k = 0; k < kernel_height * kernel_width; k++)
                     {
                         int y = i * this->stride_ - this->padding_ + (k / kernel_width);
@@ -54,7 +71,7 @@ public:
                             continue;
 
                         int value = input({ c, y, x });
-                        if (value > maximum)
+                        if (value >= maximum)
                         {
                             maximum = value;
                             maximum_coords = Coord3D(c, y, x);
@@ -81,7 +98,7 @@ public:
     {
         auto prev = this->prev_.lock();
 
-        Tensor<T> new_delta(prev->get_shape());
+        Tensor<T> new_delta(prev->get_out_shape());
         int k = 0;
 
         for (int c = 0; c < delta.get_shape()[0]; c++)
@@ -111,6 +128,7 @@ private:
         int x_, y_, z_;
     };
 
+    std::shared_ptr<std::vector<int>> kernel_shape_;
     int padding_;
     int stride_;
     std::shared_ptr<std::vector<Coord3D>> mask_indices_;
