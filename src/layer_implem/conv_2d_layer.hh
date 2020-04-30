@@ -104,7 +104,7 @@ public:
         delta *= this->last_z_;
 
         // Compute db
-        this->delta_biases_ += delta.sum({ 1, 2 }, 0);
+        this->delta_biases_ += delta.sum({ 1, 2 });
 
         // Compute dw
         Tensor<T> delta_reshaped(delta);

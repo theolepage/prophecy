@@ -60,6 +60,8 @@ public:
 
         for (int epoch = 0; epoch < epochs; epoch++)
         {
+            T total_cost;
+
             // Determine batches
             int i = 0;
             int nb_batches = ceil(1.0f * x.size() / batch_size);
@@ -72,6 +74,7 @@ public:
 
                     auto last_layer = layers_[layers_.size() - 1];
                     auto delta = last_layer->cost(&y[i]);
+                    total_cost = delta.sum()({ 0 });
                     last_layer->backpropagation(delta);
 
                     i++;
@@ -86,7 +89,7 @@ public:
                 }
             }
 
-            std::cout << "Epoch " << epoch << " completed.\n";
+            std::cout << "Epoch " << epoch << " completed (loss: " << total_cost << ")\n";
         }
     }
 

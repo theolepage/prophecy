@@ -312,9 +312,14 @@ public:
         return res;
     }
 
-    Tensor<T> sum(std::vector<int> axis, T subtotal_default)
+    Tensor<T> sum()
     {
-        return reduce(axis, subtotal_default, [](T a, T b) { return a + b; });
+        return reduce(0, [](T a, T b) { return a + b; });
+    }
+
+    Tensor<T> sum(std::vector<int> axis)
+    {
+        return reduce(axis, 0, [](T a, T b) { return a + b; });
     }
 
     Tensor<T> sum(T subtotal_default)

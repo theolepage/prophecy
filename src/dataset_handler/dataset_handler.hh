@@ -12,6 +12,7 @@ using dh_model_type = float;
 enum class set_type
 {
     CIFAR_10,
+    MNIST,
     XOR
 };
 
@@ -22,12 +23,15 @@ public:
         : limit_(-1)
     {}
 
-    void read(const char* file, set_type type)
+    void read(std::string file, set_type type)
     {
         switch (type)
         {
         case set_type::CIFAR_10:
             load_cifar_10(file);
+            break;
+        case set_type::MNIST:
+            load_mnist(file);
             break;
         case set_type::XOR:
             load_xor();
@@ -94,7 +98,7 @@ public:
     }
 
 private:
-    void load_cifar_10(const char* path)
+    void load_cifar_10(std::string path)
     {
         auto nb_image = 10000;
         static constexpr auto image_width = 32;
@@ -149,6 +153,95 @@ private:
             }
             x.emplace_back(rgb);
         }
+    }
+
+    void load_mnist_labels(std::string path)
+    {
+        path.append("/train-labels-idx1-ubyte");
+
+        auto nb_image = 60000;
+
+        // Open file
+        std::ifstream file;
+        file.open(path, std::ios::in | std::ios::binary | std::ios::ate);
+        if (!file) {
+            std::cout << "Error opening file: " << path << std::endl;
+            return;
+        }
+
+        // Read the entire file at once
+        auto file_size = file.tellg();
+        std::unique_ptr<char[]> buffer(new char[file_size]);
+        file.seekg(0, std::ios::beg);
+        file.read(buffer.get(), file_size);
+        file.close();
+
+        // Apply limit
+        if (limit_ >= 0 and limit_ < nb_image)
+            nb_image = limit_;
+
+        // Labels
+        for (int image = 0; image < nb_image; ++image)
+        {
+            Tensor<dh_model_type> label({ 10, 1 });
+            label.fill(fill_type::ZEROS);
+            
+            int value = static_cast<int>(buffer[8 + image]);
+            
+            label({ value, 0 }) = static_cast<dh_model_type>(1);
+            y.emplace_back(label);
+        }
+    }
+
+    void load_mnist_images(std::string path)
+    {
+        path.append("/train-images-idx3-ubyte");
+
+        auto nb_image = 60000;
+        static constexpr auto image_width = 28;
+        static constexpr auto image_height = 28;
+
+        // Open file
+        std::ifstream file;
+        file.open(path, std::ios::in | std::ios::binary | std::ios::ate);
+        if (!file) {
+            std::cout << "Error opening file: " << path << std::endl;
+            return;
+        }
+
+        // Read the entire file at once
+        auto file_size = file.tellg();
+        std::unique_ptr<char[]> buffer(new char[file_size]);
+        file.seekg(0, std::ios::beg);
+        file.read(buffer.get(), file_size);
+        file.close();
+
+        // Apply limit
+        if (limit_ >= 0 and limit_ < nb_image)
+            nb_image = limit_;
+
+        // Images
+        for (int image = 0; image < nb_image; ++image)
+        {
+            int offset = 16 + image * (image_height * image_width);
+            Tensor<dh_model_type> rgb({ 1, image_height, image_width });
+            
+            for (int y = 0; y < image_height; ++y)
+            {
+                for (int x = 0; x < image_width; ++x)
+                {
+                    int value = static_cast<unsigned char>(buffer[offset + y * image_width + x]);
+                    rgb({ 0, y, x }) = static_cast<dh_model_type>(value / 255.0f);
+                }
+            }
+            x.emplace_back(rgb);
+        }
+    }
+
+    void load_mnist(std::string path)
+    {
+        load_mnist_labels(path);
+        load_mnist_images(path);
     }
 
     auto get_xor(unsigned a, unsigned b)

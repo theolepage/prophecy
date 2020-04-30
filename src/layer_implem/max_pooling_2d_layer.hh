@@ -60,8 +60,8 @@ public:
             {
                 for (int j = 0; j < out_cols; j++)
                 {
-                    int maximum = 0;
-                    Coord3D maximum_coords = Coord3D(0, 0, 0);
+                    T maximum = -1.0 * 10000.0f;
+                    Coord3D maximum_coords = Coord3D(c, i, j);
                     for (int k = 0; k < kernel_height * kernel_width; k++)
                     {
                         int y = i * this->stride_ - this->padding_ + (k / kernel_width);
@@ -70,7 +70,7 @@ public:
                         if (y < 0 || y >= height || x < 0 || x >= width)
                             continue;
 
-                        int value = input({ c, y, x });
+                        T value = input({ c, y, x });
                         if (value >= maximum)
                         {
                             maximum = value;
