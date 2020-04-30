@@ -7,8 +7,8 @@ template <typename T>
 class InputLayer final : public Layer<T>
 {
 public:
-    InputLayer(int nb_neurons)
-        : Layer<T>(nb_neurons)
+    InputLayer(const std::vector<int>& out_shape)
+        : Layer<T>(out_shape)
     {}
 
     virtual ~InputLayer() = default;
@@ -19,7 +19,7 @@ public:
         return this->next_->feedforward(input, training);
     }
 
-    void backpropagation(const Tensor<T>* const)
+    void backpropagation(Tensor<T>&)
     {
         return;
     }

@@ -41,7 +41,7 @@ public:
         shape_ = std::make_shared<std::vector<int>>(shape);
         size_ = compute_size(shape_);
         data_ = std::shared_ptr<T[]>(new T[size_]);
-        offset = 0L;
+        offset_ = 0L;
         transposed_ = false;
     }
 
@@ -50,7 +50,7 @@ public:
         size_ = t.size_;
         shape_ = t.shape_;
         data_ = t.data_;
-        offset = 0L;
+        offset_ = 0L;
         transposed_ = t.transposed_;
     }
 
@@ -59,7 +59,7 @@ public:
         size_ = t.size_;
         shape_ = t.shape_;
         data_ = t.data_;
-        offset = 0L;
+        offset_ = 0L;
         transposed_ = t.transposed_;
         return *this;
     }
@@ -68,7 +68,7 @@ public:
 
     bool operator==(const Tensor<T>& t)
     {
-        if (shape_ != t.get_shape())
+        if (*shape_ != t.get_shape())
             return false;
         for (int i = 0; i < size_; ++i)
         {
@@ -82,7 +82,7 @@ public:
     * Getters / setters
     */
 
-    std::vector<int> get_shape()
+    std::vector<int> get_shape() const
     {
         return *shape_;
     }
@@ -116,12 +116,14 @@ public:
         return data_[coord_to_index(coords)];
     }
 
-    void reshape(std::initializer_list<int> shape)
+    Tensor<T>& reshape(std::vector<int> shape)
     {
-        if (compute_size(shape) != compute_size(shape_))
+        auto new_shape = std::make_shared<std::vector<int>>(shape);
+        if (compute_size(new_shape) != compute_size(shape_))
             throw "New shape must be of same size.";
 
-        shape_ = shape;
+        shape_ = new_shape;
+        return *this;
     }
 
     /**
@@ -132,7 +134,7 @@ public:
     void fill(FUNCTOR_TYPE& func)
     {
         assert(data_ != nullptr);
-        for (int i = offset; i < size_; ++i)
+        for (int i = offset_; i < size_; ++i)
             data_[i] = func();
     }
 
@@ -140,7 +142,7 @@ public:
     {
         assert(data_ != nullptr);
 
-        for (long long i = offset; i < size_; i++)
+        for (long long i = offset_; i < size_; i++)
             data_[i] = value_initializer();
     }
 
@@ -148,7 +150,7 @@ public:
     {
         assert(data_ != nullptr);
 
-        for (long long i = offset; i < size_; i++)
+        for (long long i = offset_; i < size_; i++)
             data_[i] = value;
     }
 
@@ -159,19 +161,19 @@ public:
         switch(type)
         {
             case fill_type::RANDOM:
-                for (long long i = offset; i < size_; i++)
+                for (long long i = offset_; i < size_; i++)
                     data_[i] = get_random_float();
                 break;
             case fill_type::SEQUENCE:
-                for (long long i = offset; i < size_; i++)
+                for (long long i = offset_; i < size_; i++)
                     data_[i] = i;
                 break;
             case fill_type::ZEROS:
-                for (long long i = offset; i < size_; i++)
+                for (long long i = offset_; i < size_; i++)
                     data_[i] = static_cast<T>(0);
                 break;
             case fill_type::ONES:
-                for (long long i = offset; i < size_; i++)
+                for (long long i = offset_; i < size_; i++)
                     data_[i] = static_cast<T>(1);
                 break;
         }
@@ -181,7 +183,7 @@ public:
     {
         assert(data_ != nullptr);
 
-        for (long long i = offset; i < size_; i++)
+        for (long long i = offset_; i < size_; i++)
             data_[i] = value_initializer(data_[i]);
         return *this;
     }
@@ -191,7 +193,7 @@ public:
         assert(data_ != nullptr);
 
         Tensor<T> res(*shape_);
-        for (long long i = offset; i < size_; i++)
+        for (long long i = offset_; i < size_; i++)
             res.data_[i] = value_initializer(data_[i]);
         return res;
     }
@@ -202,8 +204,8 @@ public:
         if (*shape_ != *right.shape_)
             throw std::invalid_argument("Operations requires the two tensors to have the same shape.");
 
-        Tensor<T> res(shape_);
-        for (long long i = offset; i < size_; i++)
+        Tensor<T> res(*shape_);
+        for (long long i = offset_; i < size_; i++)
             res.data_[i] = fn(data_[i], right.data_[i]);
         return res;
     }
@@ -214,7 +216,7 @@ public:
         if (*shape_ != *right.shape_)
             throw std::invalid_argument("Operations requires the two tensors to have the same shape.");
 
-        for (long long i = offset; i < size_; i++)
+        for (long long i = offset_; i < size_; i++)
             data_[i] = fn(data_[i], right.data_[i]);
         return *this;
     }
@@ -223,7 +225,7 @@ public:
     {
         assert(data_ != nullptr);
 
-        for (int i = offset; i < size_; i++)
+        for (int i = offset_; i < size_; i++)
             data_[i] = fn(data_[i], val);
         return *this;
     }
@@ -231,6 +233,11 @@ public:
     Tensor<T>& operator+=(const Tensor &right)
     {
         return op_inplace(right, [](const T a, const T b) { return a + b; });
+    }
+
+    Tensor<T>& operator+=(const T v)
+    {
+        return op_inplace(v, [](const T a, const  T b) { return a + b; });
     }
 
     Tensor<T> operator+(const Tensor &right) const
@@ -241,6 +248,11 @@ public:
     Tensor<T>& operator-=(const Tensor &right)
     {
         return op_inplace(right, [](const T a, const T b) { return a - b; });
+    }
+
+    Tensor<T>& operator-=(const T v)
+    {
+        return op_inplace(v, [](const T a, const  T b) { return a - b; });
     }
 
     Tensor<T> operator-(const Tensor &right) const
@@ -268,6 +280,11 @@ public:
         return op_inplace(right, [](const T a, const T b) { return a / b; });
     }
 
+    Tensor<T>& operator/=(const T v)
+    {
+        return op_inplace(v, [](const T a, const  T b) { return a / b; });
+    }
+
     Tensor<T> operator/(const Tensor &right) const
     {
         return op(right, [](const T a, const T b) { return a / b; });
@@ -275,8 +292,8 @@ public:
 
     Tensor<T> extract(std::vector<int> coords) const
     {
-        int prevdim = coords.size();
-        int shape_size = shape_->size();
+        auto prevdim = coords.size();
+        auto shape_size = shape_->size();
         assert(prevdim <= shape_size);
 
         while (coords.size() < shape_size)
@@ -285,13 +302,29 @@ public:
         long long begin = coord_to_index(coords);
 
         std::vector<int> new_shape(0);
-        for (int i = prevdim; i < shape_size; i++)
+        for (auto i = prevdim; i < shape_size; i++)
             new_shape.push_back(shape_->at(i));
         if (!new_shape.size())
             new_shape.push_back(1);
 
-        Tensor<T> res(new_shape, data_ + begin);
+        Tensor<T> res(new_shape, data_);
+        res.offset_ = begin;
         return res;
+    }
+
+    Tensor<T> sum()
+    {
+        return reduce(0, [](T a, T b) { return a + b; });
+    }
+
+    Tensor<T> sum(std::vector<int> axis)
+    {
+        return reduce(axis, 0, [](T a, T b) { return a + b; });
+    }
+
+    Tensor<T> sum(T subtotal_default)
+    {
+        return reduce(subtotal_default, [](T a, T b) { return a + b; });
     }
 
     Tensor<T> reduce(T subtotal_default, std::function<T(T, T)> fn) const
@@ -311,11 +344,7 @@ public:
         axis.erase(std::unique(axis.begin(), axis.end()), axis.end());
 
         for (int dim : axis)
-        {
             res = res.reduce(dim, subtotal_default, fn);
-        }
-
-        res.prevent_free_ = false;
         return res;
     }
 
@@ -370,10 +399,80 @@ public:
     * Matrix operations (transpose, matmul)
     */
 
+    Tensor<T> im2col(int kernel_height, int kernel_width, int padding, int stride)
+    {
+        int img_channels = this->shape_->at(0);
+        int img_height = this->shape_->at(1);
+        int img_width = this->shape_->at(2);
+
+        int kernel_vertical_shifts = 1 + (img_height + 2 * padding - kernel_height) / stride;
+        int kernel_horizontal_shifts = 1 + (img_width + 2 * padding - kernel_width) / stride;
+        int patch = img_channels * kernel_height * kernel_width;
+
+        Tensor<T> res({ patch, kernel_vertical_shifts * kernel_horizontal_shifts });
+
+        for (int c = 0; c < patch; c++)
+        {
+            int vertical_offset = (c / kernel_width) % kernel_height;
+            int kernel_offset = c % kernel_width;
+            int channel = c / (kernel_height * kernel_width);
+
+            for (int i = 0; i < kernel_vertical_shifts; i++)
+            {
+                for (int j = 0; j < kernel_horizontal_shifts; j++)
+                {
+                    int y = i * stride - padding + vertical_offset;
+                    int x = j * stride - padding + kernel_offset;
+
+                    T value = 0;
+                    if (y >= 0 && y < img_height && x >= 0 && x < img_width)
+                        value = (*this)({ channel, y, x });
+                    res({ c, i * kernel_horizontal_shifts + j }) = value;
+                }
+            }
+        }
+
+        return res;
+    }
+
+    Tensor<T> col2im(std::vector<int> img_shape, int kernel_height, int kernel_width, int padding, int stride)
+    {
+        int img_channels = img_shape[0];
+        int img_height = img_shape[1];
+        int img_width = img_shape[2];
+
+        int kernel_vertical_shifts = 1 + (img_height + 2 * padding - kernel_height) / stride;
+        int kernel_horizontal_shifts = 1 + (img_width + 2 * padding - kernel_width) / stride;
+        int patch = img_channels * kernel_height * kernel_width;
+
+        Tensor<T> res(img_shape);
+
+        for (int c = 0; c < patch; c++)
+        {
+            int vertical_offset = (c / kernel_width) % kernel_height;
+            int kernel_offset = c % kernel_width;
+            int channel = c / (kernel_height * kernel_width);
+
+            for (int i = 0; i < kernel_vertical_shifts; i++)
+            {
+                for (int j = 0; j < kernel_horizontal_shifts; j++)
+                {
+                    int y = i * stride - padding + vertical_offset;
+                    int x = j * stride - padding + kernel_offset;
+
+                    if (y >= 0 && y < img_height && x >= 0 && x < img_width)
+                        res({ channel, y, x }) += (*this)({ c, i * kernel_horizontal_shifts + j });
+                }
+            }
+        }
+
+        return res;
+    }
+
     Tensor<T> transpose(void) const
     {
         assert(data_ != nullptr);
-        if (shape_->size() > 2)
+        if (shape_->size() != 2)
             throw "Invalid shape for matrix transpose.";
 
         Tensor<T> res({shape_->at(1), shape_->at(0)});
@@ -382,7 +481,7 @@ public:
 
         for (int i = 0; i < rows; i++)
             for (int j = 0; j < cols; j++)
-                res.data_[offset + j * rows + i] = data_[offset + i * cols + j];
+                res.data_[offset_ + j * rows + i] = data_[offset_ + i * cols + j];
 
         return res;
     }
@@ -390,7 +489,7 @@ public:
     Tensor<T> matmul(const Tensor<T>& right) const
     {
         assert(data_ != nullptr);
-        if (shape_->size() > 2)
+        if (shape_->size() != 2)
             throw "Invalid shape for matrix multiplication.";
 
         int l_rows = shape_->at(0);
@@ -467,15 +566,15 @@ private:
     long long size_;
     std::shared_ptr<std::vector<int>> shape_;
     std::shared_ptr<T[]> data_;
-    long long offset;
+    long long offset_;
     bool transposed_;
 
-    Tensor(std::vector<int> shape, T *data)
-        : shape_(std::shared_ptr<std::vector<int>>(shape))
+    Tensor(std::vector<int> shape, std::shared_ptr<T[]> data)
     {
-        size_ = compute_size(shape);
+        shape_ = std::make_shared<std::vector<int>>(shape);
+        size_ = compute_size(shape_);
         data_ = data;
-        offset = 0;
+        offset_ = 0;
         transposed_ = false;
     }
 
@@ -487,7 +586,7 @@ private:
         return res;
     }
 
-    long long coord_to_index(std::vector<int> coords)
+    long long coord_to_index(std::vector<int> coords) const
     {
         assert(coords.size() == shape_->size());
         for (unsigned i = 0; i < shape_->size(); i++)
@@ -502,7 +601,7 @@ private:
             step *= shape_->at(dim);
         }
 
-        return res + offset;
+        return res + offset_;
     }
 
     float get_random_float(void) const

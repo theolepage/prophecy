@@ -8,35 +8,45 @@ template <typename T>
 class Layer
 {
 public:
-    Layer(int nb_neurons)
-    : nb_neurons_(nb_neurons)
+    Layer(const std::vector<int>& out_shape)
+        : out_shape_(std::make_shared<std::vector<int>>(out_shape))
+    {}
+
+    Layer()
+        : out_shape_(nullptr)
     {}
 
     virtual ~Layer() = default;
 
-    virtual Tensor<T> feedforward(const Tensor<T>& input, bool training) = 0;
-
-    virtual void backpropagation(const Tensor<T>* const y) = 0;
-
-    virtual void compile(std::weak_ptr<Layer<T>> prev,
-                            std::shared_ptr<Layer<T>> next)
+    virtual void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
     {
-        compiled_ = true;
-        prev_ = prev;
-        next_ = next;
+        this->compiled_ = true;
+        this->prev_ = prev;
+        this->next_ = next;
     }
 
-    int get_nb_neurons(void) const { return nb_neurons_; }
-    Tensor<T>& get_delta(void) { return delta_; }
-    Tensor<T>& get_last_a(void) { return last_a_; }
+    virtual Tensor<T> feedforward(const Tensor<T>& input, bool training) = 0;
+
+    virtual void backpropagation(Tensor<T>& delta) = 0;
+
+    virtual Tensor<T>& cost(const Tensor<T>* const y)
+    {
+        this->last_a_ -= *y;
+        return this->last_a_;
+    }
+
+    std::vector<int> get_out_shape(void) const { return *this->out_shape_; }
+    
+    Tensor<T>& get_last_a(void) { return this->last_a_; }
+
+    Tensor<T>& get_last_z(void) { return this->last_z_; }
 
 protected:
     bool compiled_;
-    int nb_neurons_;
+    std::shared_ptr<std::vector<int>> out_shape_;
 
     Tensor<T> last_a_;
     Tensor<T> last_z_;
-    Tensor<T> delta_;
 
     std::weak_ptr<Layer<T>> prev_;
     std::shared_ptr<Layer<T>> next_;

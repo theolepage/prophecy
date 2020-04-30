@@ -1,3 +1,8 @@
 *.o
+
 prophecy
 test
+
+datasets/
+
+.vscode/
