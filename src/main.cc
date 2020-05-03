@@ -18,12 +18,12 @@ static void xor_example(void)
 
     // Create model
     model.add(new InputLayer<model_type>({ 2 }));
-    model.add(new DenseLayer<model_type>({ 2 }, s));
-    model.add(new DenseLayer<model_type>({ 1 }, s));
+    model.add(new DenseLayer<model_type>(2, s));
+    model.add(new DenseLayer<model_type>(1, s));
 
     // Create dataset
     DatasetHandler dh;
-    dh.read(nullptr, set_type::XOR);
+    dh.read("", set_type::XOR);
 
     // Train model
     model.compile(0.1);
@@ -125,7 +125,7 @@ static void mnist_example(void)
 
 int main(void)
 {
-    switch(2) {
+    switch(0) {
         case 0:
             xor_example();
             break;
