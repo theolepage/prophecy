@@ -126,7 +126,9 @@ static void mnist_example(void)
 
 int main(void)
 {
+    #ifdef CUDA_ENABLED
     kernel();
+    #endif
 
     switch(0) {
         case 0:
