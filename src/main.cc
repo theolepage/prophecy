@@ -1,6 +1,7 @@
 #include <iostream>
 #include <memory>
 
+#include "kernel.cuh"
 #include "tensor/tensor.hh"
 #include "model/model.hh"
 #include "layer_implem/dense_layer.hh"
@@ -125,6 +126,8 @@ static void mnist_example(void)
 
 int main(void)
 {
+    kernel();
+
     switch(0) {
         case 0:
             xor_example();
