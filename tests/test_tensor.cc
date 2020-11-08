@@ -15,12 +15,12 @@ TEST(test_matrix, simple_get)
     Tensor<int> m({ 2, 2 });
     m.fill(fill_type::SEQUENCE);
 
-    m(0, 1) = 17;
+    m(0u, 1u) = 17;
 
-    ASSERT_EQ(m(0, 0), 0);
-    ASSERT_EQ(m(0, 1), 17);
-    ASSERT_EQ(m(1, 0), 2);
-    ASSERT_EQ(m(1, 1), 3);
+    ASSERT_EQ(m({0, 0}), 0);
+    ASSERT_EQ(m({0, 1}), 17);
+    ASSERT_EQ(m({1, 0}), 2);
+    ASSERT_EQ(m({1, 1}), 3);
 }
 
 TEST(test_matrix, simple_transpose)
@@ -30,15 +30,15 @@ TEST(test_matrix, simple_transpose)
 
     Tensor<int> res = m.transpose();
 
-    ASSERT_EQ(res(0, 0), 0);
-    ASSERT_EQ(res(1, 0), 1);
-    ASSERT_EQ(res(2, 0), 2);
-    ASSERT_EQ(res(0, 1), 3);
-    ASSERT_EQ(res(1, 1), 4);
-    ASSERT_EQ(res(2, 1), 5);
-    ASSERT_EQ(res(0, 2), 6);
-    ASSERT_EQ(res(1, 2), 7);
-    ASSERT_EQ(res(2, 2), 8);
+    ASSERT_EQ(res({0, 0}), 0);
+    ASSERT_EQ(res({1, 0}), 1);
+    ASSERT_EQ(res({2, 0}), 2);
+    ASSERT_EQ(res({0, 1}), 3);
+    ASSERT_EQ(res({1, 1}), 4);
+    ASSERT_EQ(res({2, 1}), 5);
+    ASSERT_EQ(res({0, 2}), 6);
+    ASSERT_EQ(res({1, 2}), 7);
+    ASSERT_EQ(res({2, 2}), 8);
 }
 
 TEST(test_matrix, simple_map)
@@ -49,10 +49,10 @@ TEST(test_matrix, simple_map)
     std::function<double(double)> f = [](double x) { return 2 * x; };
     m = m.map(f);
 
-    ASSERT_EQ(m(0, 0), 0);
-    ASSERT_EQ(m(0, 1), 2);
-    ASSERT_EQ(m(1, 0), 4);
-    ASSERT_EQ(m(1, 1), 6);
+    ASSERT_EQ(m({0, 0}), 0);
+    ASSERT_EQ(m({0, 1}), 2);
+    ASSERT_EQ(m({1, 0}), 4);
+    ASSERT_EQ(m({1, 1}), 6);
 }
 
 TEST(test_matrix, simple_addition)
@@ -64,10 +64,10 @@ TEST(test_matrix, simple_addition)
 
     Tensor<int> res = a + b;
 
-    ASSERT_EQ(res(0, 0), 0);
-    ASSERT_EQ(res(0, 1), 2);
-    ASSERT_EQ(res(1, 0), 4);
-    ASSERT_EQ(res(1, 1), 6);
+    ASSERT_EQ(res({0, 0}), 0);
+    ASSERT_EQ(res({0, 1}), 2);
+    ASSERT_EQ(res({1, 0}), 4);
+    ASSERT_EQ(res({1, 1}), 6);
 }
 
 TEST(test_matrix, simple_substraction)
@@ -79,10 +79,10 @@ TEST(test_matrix, simple_substraction)
 
     Tensor<int> res = a - b;
 
-    ASSERT_EQ(res(0, 0), 0);
-    ASSERT_EQ(res(0, 1), 0);
-    ASSERT_EQ(res(1, 0), 0);
-    ASSERT_EQ(res(1, 1), 0);
+    ASSERT_EQ(res({0, 0}), 0);
+    ASSERT_EQ(res({0, 1}), 0);
+    ASSERT_EQ(res({1, 0}), 0);
+    ASSERT_EQ(res({1, 1}), 0);
 }
 
 TEST(test_matrix, simple_multiplication)
@@ -94,10 +94,10 @@ TEST(test_matrix, simple_multiplication)
 
     Tensor<int> res = a.matmul(b);
 
-    ASSERT_EQ(res(0, 0), 2);
-    ASSERT_EQ(res(0, 1), 3);
-    ASSERT_EQ(res(1, 0), 6);
-    ASSERT_EQ(res(1, 1), 11);
+    ASSERT_EQ(res({0, 0}), 2);
+    ASSERT_EQ(res({0, 1}), 3);
+    ASSERT_EQ(res({1, 0}), 6);
+    ASSERT_EQ(res({1, 1}), 11);
 }
 
 TEST(test_matrix, simple_multiply)
@@ -109,10 +109,10 @@ TEST(test_matrix, simple_multiply)
 
     Tensor<int> res = a * b;
 
-    ASSERT_EQ(res(0, 0), 0);
-    ASSERT_EQ(res(0, 1), 1);
-    ASSERT_EQ(res(1, 0), 4);
-    ASSERT_EQ(res(1, 1), 9);
+    ASSERT_EQ(res({0, 0}), 0);
+    ASSERT_EQ(res({0, 1}), 1);
+    ASSERT_EQ(res({1, 0}), 4);
+    ASSERT_EQ(res({1, 1}), 9);
 }
 
 TEST(test_tensor, simple_test)
@@ -191,7 +191,7 @@ TEST(test_tensor, test_reduce_two_axis)
     Tensor<int> t({ 3, 2, 2 });
     t.fill(fill_type::SEQUENCE);
 
-    std::vector<int> axis{ 1, 2, 2 };
+    std::vector<unsigned int> axis{ 1, 2, 2 };
     Tensor<int> please = t.reduce(axis, 0, add);
 
     ASSERT_EQ(please({ 0 }), 6);

@@ -3,11 +3,11 @@
 #include "layer.hh"
 #include "../tensor/tensor.hh"
 
-template <typename T>
+template <typename T = float>
 class InputLayer final : public Layer<T>
 {
 public:
-    InputLayer(const std::vector<int>& out_shape)
+    InputLayer(const std::vector<unsigned int>& out_shape)
         : Layer<T>(out_shape)
     {}
 

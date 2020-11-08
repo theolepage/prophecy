@@ -3,22 +3,22 @@
 #include "../layer/layer.hh"
 #include "../tensor/tensor.hh"
 
-template <typename T>
+template <typename T = float>
 class MaxPooling2DLayer final : public Layer<T>
 {
 public:
-    MaxPooling2DLayer(const std::vector<int>& kernel_shape,
-                      int padding,
-                      int stride)
+    MaxPooling2DLayer(const std::vector<unsigned int>& kernel_shape,
+                      const unsigned int padding,
+                      const unsigned int stride)
         : Layer<T>()
-        , kernel_shape_(std::make_shared<std::vector<int>>(kernel_shape))
+        , kernel_shape_(std::make_shared<std::vector<unsigned int>>(kernel_shape))
         , padding_(padding)
         , stride_(stride)
     {}
 
-    MaxPooling2DLayer(const std::vector<int>& kernel_shape)
+    MaxPooling2DLayer(const std::vector<unsigned int>& kernel_shape)
         : Layer<T>()
-        , kernel_shape_(std::make_shared<std::vector<int>>(kernel_shape))
+        , kernel_shape_(std::make_shared<std::vector<unsigned int>>(kernel_shape))
         , padding_(0)
         , stride_(1)
     {}
@@ -28,12 +28,12 @@ public:
     void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
     {
         // Determine output shape
-        auto prev_shape = prev.lock()->get_out_shape();
-        int c = prev_shape[0];
-        int h = 1 + (prev_shape[1] + 2 * this->padding_ - this->kernel_shape_->at(0)) / this->stride_;
-        int w = 1 + (prev_shape[2] + 2 * this->padding_ - this->kernel_shape_->at(1)) / this->stride_;
-        std::vector<int> out_shape({ c, h, w });
-        this->out_shape_ = std::make_shared<std::vector<int>>(out_shape);
+        const auto prev_shape = prev.lock()->get_out_shape();
+        const unsigned int c = prev_shape[0];
+        const unsigned int h = 1 + (prev_shape[1] + 2 * this->padding_ - this->kernel_shape_->at(0)) / this->stride_;
+        const unsigned int w = 1 + (prev_shape[2] + 2 * this->padding_ - this->kernel_shape_->at(1)) / this->stride_;
+        std::vector<unsigned int> out_shape({ c, h, w });
+        this->out_shape_ = std::make_shared<std::vector<unsigned int>>(out_shape);
 
         this->compiled_ = true;
         this->prev_ = prev;
@@ -42,39 +42,39 @@ public:
 
     Tensor<T> feedforward(const Tensor<T>& input, bool training)
     {
-        int channels = input.get_shape()[0];
-        int height = input.get_shape()[1];
-        int width = input.get_shape()[2];
+        const unsigned int channels = input.get_shape()[0];
+        const unsigned int height = input.get_shape()[1];
+        const unsigned int width = input.get_shape()[2];
 
-        int kernel_height = this->kernel_shape_->at(0);
-        int kernel_width = this->kernel_shape_->at(1);
+        const unsigned int kernel_height = this->kernel_shape_->at(0);
+        const unsigned int kernel_width = this->kernel_shape_->at(1);
 
-        int out_rows = (height + 2 * this->padding_ - kernel_height) / this->stride_ + 1;
-        int out_cols = (width + 2 * this->padding_ - kernel_width) / this->stride_ + 1;
+        const unsigned int out_rows = (height + 2 * this->padding_ - kernel_height) / this->stride_ + 1;
+        const unsigned int out_cols = (width + 2 * this->padding_ - kernel_width) / this->stride_ + 1;
         Tensor<T> out({ channels, out_rows, out_cols });
 
         std::vector<Coord3D> back;
-        for (int c = 0; c < channels; c++)
+        for (unsigned int c = 0; c < channels; c++)
         {
-            for (int i = 0; i < out_rows; i++)
+            for (unsigned int i = 0; i < out_rows; i++)
             {
-                for (int j = 0; j < out_cols; j++)
+                for (unsigned int j = 0; j < out_cols; j++)
                 {
-                    T maximum = -1.0 * 10000.0f;
+                    T maximum = static_cast<T>(-1.0 * 10000.0);
                     Coord3D maximum_coords = Coord3D(c, i, j);
-                    for (int k = 0; k < kernel_height * kernel_width; k++)
+                    for (unsigned int k = 0; k < kernel_height * kernel_width; k++)
                     {
-                        int y = i * this->stride_ - this->padding_ + (k / kernel_width);
-                        int x = j * this->stride_ - this->padding_ + (k % kernel_width);
+                        const int y = i * this->stride_ - this->padding_ + (k / kernel_width);
+                        const int x = j * this->stride_ - this->padding_ + (k % kernel_width);
 
-                        if (y < 0 || y >= height || x < 0 || x >= width)
+                        if (y < 0 || static_cast<unsigned int>(y) >= height || x < 0 || static_cast<unsigned int>(x) >= width)
                             continue;
 
-                        T value = input({ c, y, x });
+                        T value = input({ c, static_cast<unsigned int>(y), static_cast<unsigned int>(x) });
                         if (value >= maximum)
                         {
                             maximum = value;
-                            maximum_coords = Coord3D(c, y, x);
+                            maximum_coords = Coord3D(c, static_cast<unsigned int>(y), static_cast<unsigned int>(x));
                         }
                     }
                     out({ c, i, j }) = maximum;
@@ -99,11 +99,11 @@ public:
         auto prev = this->prev_.lock();
 
         Tensor<T> new_delta(prev->get_out_shape());
-        int k = 0;
+        unsigned int k = 0;
 
-        for (int c = 0; c < delta.get_shape()[0]; c++)
-            for (int i = 0; i < delta.get_shape()[1]; i++)
-                for (int j = 0; j < delta.get_shape()[2]; j++)
+        for (unsigned int c = 0; c < delta.get_shape()[0]; c++)
+            for (unsigned int i = 0; i < delta.get_shape()[1]; i++)
+                for (unsigned int j = 0; j < delta.get_shape()[2]; j++)
                     new_delta(this->mask_indices_->at(k++).to_list()) = delta({ c, i, j });
 
         prev->backpropagation(new_delta);
@@ -116,20 +116,20 @@ private:
         Coord3D()
         {}
 
-        Coord3D(int x, int y, int z)
+        Coord3D(const unsigned int x, const unsigned int y, const unsigned int z)
             : x_(x), y_(y), z_(z)
         {}
 
-        std::vector<int> to_list()
+        std::vector<unsigned int> to_list()
         {
             return { x_, y_, z_ };
         }
     private:
-        int x_, y_, z_;
+        unsigned int x_, y_, z_;
     };
 
-    std::shared_ptr<std::vector<int>> kernel_shape_;
-    int padding_;
-    int stride_;
+    std::shared_ptr<std::vector<unsigned int>> kernel_shape_;
+    const unsigned int padding_;
+    const unsigned int stride_;
     std::shared_ptr<std::vector<Coord3D>> mask_indices_;
 };

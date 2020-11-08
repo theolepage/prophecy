@@ -14,13 +14,13 @@ using model_type = float;
 
 static void xor_example(void)
 {
-    Model<model_type> model = Model<model_type>();
-    SigmoidActivationFunction s = SigmoidActivationFunction<model_type>();
+    Model model = Model();
+    SigmoidActivationFunction s = SigmoidActivationFunction();
 
     // Create model
-    model.add(new InputLayer<model_type>({ 2 }));
-    model.add(new DenseLayer<model_type>(2, s));
-    model.add(new DenseLayer<model_type>(1, s));
+    model.add(InputLayer({ 2 }));
+    model.add(DenseLayer(2, s));
+    model.add(DenseLayer(1, s));
 
     // Create dataset
     DatasetHandler dh;
@@ -51,15 +51,15 @@ static void cifar_10_example(void)
     dh.read("datasets/cifar-10-batches-bin/data_batch_1.bin", set_type::CIFAR_10);
 
     // Create model
-    model.add(new InputLayer<model_type>({ 3, 32, 32 }));
+    model.add(InputLayer<model_type>({ 3, 32, 32 }));
 
-    model.add(new Conv2DLayer<model_type>(32, { 3, 3 }, r));
-    model.add(new Conv2DLayer<model_type>(64, { 3, 3 }, r));
-    model.add(new MaxPooling2DLayer<model_type>({ 2, 2 }, 0, 2));
+    model.add(Conv2DLayer<model_type>(32, { 3, 3 }, r));
+    model.add(Conv2DLayer<model_type>(64, { 3, 3 }, r));
+    model.add(MaxPooling2DLayer<model_type>({ 2, 2 }, 0, 2));
 
-    model.add(new FlattenLayer<model_type>());
-    model.add(new DenseLayer<model_type>(128, s));
-    model.add(new DenseLayer<model_type>(10, s));
+    model.add(FlattenLayer<model_type>());
+    model.add(DenseLayer<model_type>(128, s));
+    model.add(DenseLayer<model_type>(10, s));
 
     // Create dataset
     auto x_train = dh.get_training();
@@ -88,17 +88,17 @@ static void mnist_example(void)
     dh.read("datasets/mnist/", set_type::MNIST);
 
     // Create model
-    // model.add(new InputLayer<model_type>({ 1, 28, 28 }));
-    // model.add(new FlattenLayer<model_type>());
-    // model.add(new DenseLayer<model_type>({ 32 }, r));
-    // model.add(new DenseLayer<model_type>({ 10 }, r));
+    // model.add(InputLayer<model_type>({ 1, 28, 28 }));
+    // model.add(FlattenLayer<model_type>());
+    // model.add(DenseLayer<model_type>({ 32 }, r));
+    // model.add(DenseLayer<model_type>({ 10 }, r));
 
-    model.add(new InputLayer<model_type>({ 1, 28, 28 }));
-    model.add(new Conv2DLayer<model_type>(32, { 3, 3 }, s));
-    model.add(new MaxPooling2DLayer<model_type>({ 2, 2 }, 0, 2));
-    model.add(new FlattenLayer<model_type>());
-    model.add(new DenseLayer<model_type>(100, s));
-    model.add(new DenseLayer<model_type>(10, s));
+    model.add(InputLayer<model_type>({ 1, 28, 28 }));
+    model.add(Conv2DLayer<model_type>(32, { 3, 3 }, s));
+    model.add(MaxPooling2DLayer<model_type>({ 2, 2 }, 0, 2));
+    model.add(FlattenLayer<model_type>());
+    model.add(DenseLayer<model_type>(100, s));
+    model.add(DenseLayer<model_type>(10, s));
 
     // Create dataset
     auto x_train = dh.get_training();

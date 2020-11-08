@@ -4,11 +4,11 @@
 #include "../tensor/tensor.hh"
 #include "../activation_function/activation_function.hh"
 
-template <typename T>
+template <typename T = float>
 class DenseLayer final : public ProcessingLayer<T>
 {
 public:
-    DenseLayer(int nb_neurons, const ActivationFunction<T>& activation)
+    DenseLayer(const unsigned int nb_neurons, const ActivationFunction<T>& activation)
         : ProcessingLayer<T>(nb_neurons, activation)
     {}
 
@@ -17,8 +17,8 @@ public:
     void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
     {
         // Determine output shape
-        std::vector<int> out_shape = { this->nb_neurons_ };
-        this->out_shape_ = std::make_shared<std::vector<int>>(out_shape);
+        std::vector<unsigned int> out_shape = { this->nb_neurons_ };
+        this->out_shape_ = std::make_shared<std::vector<unsigned int>>(out_shape);
 
         // Initialize weights and biases
         this->weights_ = Tensor<T>({ this->nb_neurons_, prev.lock()->get_out_shape()[0] });
@@ -37,7 +37,7 @@ public:
         this->next_ = next;
     }
 
-    Tensor<T> feedforward(const Tensor<T>& input, bool training)
+    Tensor<T> feedforward(const Tensor<T>& input, const bool training)
     {
         auto z = this->weights_.matmul(input);
         z += this->biases_;

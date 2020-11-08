@@ -36,7 +36,7 @@ public:
         case set_type::XOR:
             load_xor();
             break;
-        
+
         default:
             break;
         }
@@ -100,7 +100,7 @@ public:
 private:
     void load_cifar_10(std::string path)
     {
-        auto nb_image = 10000;
+        unsigned int nb_image = 10000;
         static constexpr auto image_width = 32;
         static constexpr auto image_height = 32;
         static constexpr auto channel_size = 3;
@@ -108,7 +108,8 @@ private:
         std::ifstream file;
         file.open(path, std::ios::in | std::ios::binary | std::ios::ate);
 
-        if (!file) {
+        if (!file)
+        {
             std::cout << "Error opening file: " << path << std::endl;
             return;
         }
@@ -122,29 +123,29 @@ private:
         file.close();
 
         // Apply limit
-        if (limit_ >= 0 and limit_ < nb_image)
+        if (limit_ >= 0 && limit_ < nb_image)
             nb_image = limit_;
 
-        for (int image = 0; image < nb_image; ++image)
+        for (unsigned int image = 0; image < nb_image; ++image)
         {
-            int offset = image * (image_height * image_width * 3 + 1);
+            const unsigned int offset = image * (image_height * image_width * 3 + 1);
             unsigned char value;
             {
                 Tensor<dh_model_type> label({ 10, 1 });
                 label.fill(fill_type::ZEROS);
                 value = buffer[offset];
-                label(static_cast<int>(value), 0) = static_cast<dh_model_type>(1);
+                label(static_cast<unsigned int>(value), 0u) = static_cast<dh_model_type>(1);
                 y.emplace_back(label);
             }
 
 
             Tensor<dh_model_type> rgb({ channel_size, image_height, image_width });
 
-            for (int channel = 0; channel < channel_size; ++channel)
+            for (unsigned int channel = 0; channel < channel_size; ++channel)
             {
-                for (int y = 0; y < image_height; ++y)
+                for (unsigned int y = 0; y < image_height; ++y)
                 {
-                    for (int x = 0; x < image_width; ++x)
+                    for (unsigned int x = 0; x < image_width; ++x)
                     {
                         value = buffer[1 + offset + y * image_width + channel * (image_width * image_height) + x];
                         rgb(channel, y, x) = static_cast<dh_model_type>(value);
@@ -159,12 +160,13 @@ private:
     {
         path.append("/train-labels-idx1-ubyte");
 
-        auto nb_image = 60000;
+        unsigned int nb_image = 60000;
 
         // Open file
         std::ifstream file;
         file.open(path, std::ios::in | std::ios::binary | std::ios::ate);
-        if (!file) {
+        if (!file)
+        {
             std::cout << "Error opening file: " << path << std::endl;
             return;
         }
@@ -177,17 +179,17 @@ private:
         file.close();
 
         // Apply limit
-        if (limit_ >= 0 and limit_ < nb_image)
+        if (limit_ >= 0 && limit_ < nb_image)
             nb_image = limit_;
 
         // Labels
-        for (int image = 0; image < nb_image; ++image)
+        for (unsigned int image = 0; image < nb_image; image++)
         {
             Tensor<dh_model_type> label({ 10, 1 });
             label.fill(fill_type::ZEROS);
-            
-            int value = static_cast<int>(buffer[8 + image]);
-            
+
+            const unsigned int value = static_cast<unsigned int>(buffer[8 + image]);
+
             label({ value, 0 }) = static_cast<dh_model_type>(1);
             y.emplace_back(label);
         }
@@ -197,14 +199,15 @@ private:
     {
         path.append("/train-images-idx3-ubyte");
 
-        auto nb_image = 60000;
+        unsigned int nb_image = 60000;
         static constexpr auto image_width = 28;
         static constexpr auto image_height = 28;
 
         // Open file
         std::ifstream file;
         file.open(path, std::ios::in | std::ios::binary | std::ios::ate);
-        if (!file) {
+        if (!file)
+        {
             std::cout << "Error opening file: " << path << std::endl;
             return;
         }
@@ -217,20 +220,20 @@ private:
         file.close();
 
         // Apply limit
-        if (limit_ >= 0 and limit_ < nb_image)
+        if (limit_ >= 0 && limit_ < nb_image)
             nb_image = limit_;
 
         // Images
-        for (int image = 0; image < nb_image; ++image)
+        for (unsigned int image = 0; image < nb_image; ++image)
         {
             int offset = 16 + image * (image_height * image_width);
             Tensor<dh_model_type> rgb({ 1, image_height, image_width });
-            
-            for (int y = 0; y < image_height; ++y)
+
+            for (unsigned int y = 0; y < image_height; ++y)
             {
-                for (int x = 0; x < image_width; ++x)
+                for (unsigned int x = 0; x < image_width; ++x)
                 {
-                    int value = static_cast<unsigned char>(buffer[offset + y * image_width + x]);
+                    const unsigned int value = static_cast<unsigned int>(buffer[offset + y * image_width + x]);
                     rgb({ 0, y, x }) = static_cast<dh_model_type>(value / 255.0f);
                 }
             }
@@ -244,14 +247,14 @@ private:
         load_mnist_images(path);
     }
 
-    auto get_xor(unsigned a, unsigned b)
+    auto get_xor(const unsigned int a, const unsigned int b)
     {
-        auto mx = Tensor<dh_model_type>({2, 1});
-        mx(0, 0) = a;
-        mx(1, 0) = b;
+        auto mx = Tensor<dh_model_type>({2u, 1u});
+        mx(0u, 0u) = a;
+        mx(1u, 0u) = b;
 
-        auto my = Tensor<dh_model_type>({1, 1});
-        my(0, 0) = a ^ b;
+        auto my = Tensor<dh_model_type>({1u, 1u});
+        my(0u, 0u) = a ^ b;
 
         return std::make_pair(mx, my);
     }

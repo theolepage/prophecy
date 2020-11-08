@@ -7,11 +7,11 @@
 #include "../tensor/tensor.hh"
 #include "../activation_function/activation_function.hh"
 
-template <typename T>
+template <typename T = float>
 class ProcessingLayer : public Layer<T>
 {
 public:
-    ProcessingLayer(int nb_neurons, const ActivationFunction<T>& activation)
+    ProcessingLayer(const unsigned int nb_neurons, const ActivationFunction<T>& activation)
         : Layer<T>()
         , nb_neurons_(nb_neurons)
         , activation_(activation)
@@ -33,7 +33,7 @@ public:
     }
 
 protected:
-    int nb_neurons_;
+    const unsigned int nb_neurons_;
 
     Tensor<T> weights_;
     Tensor<T> biases_;
@@ -41,5 +41,5 @@ protected:
     Tensor<T> delta_weights_;
     Tensor<T> delta_biases_;
 
-    ActivationFunction<T> activation_;
+    const ActivationFunction<T>& activation_;
 };

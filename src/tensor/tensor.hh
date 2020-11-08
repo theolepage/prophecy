@@ -23,7 +23,7 @@ enum class transpose
     NO_IMPLICIT
 };
 
-template <typename T>
+template <typename T = float>
 class Tensor
 {
 public:
@@ -36,9 +36,9 @@ public:
         : size_(0), shape_(0), data_(nullptr), transposed_(false)
     {}
 
-    Tensor(const std::vector<int>& shape) 
+    Tensor(const std::vector<unsigned int>& shape)
     {
-        shape_ = std::make_shared<std::vector<int>>(shape);
+        shape_ = std::make_shared<std::vector<unsigned int>>(shape);
         size_ = compute_size(shape_);
         data_ = std::shared_ptr<T[]>(new T[size_]);
         offset_ = 0L;
@@ -82,7 +82,7 @@ public:
     * Getters / setters
     */
 
-    std::vector<int> get_shape() const
+    std::vector<unsigned int> get_shape() const
     {
         return *shape_;
     }
@@ -95,30 +95,30 @@ public:
     template<typename ...Ts>
     T operator()(Ts&& ...coords) const
     {
-        const std::vector<int> vec = {coords ...};
+        const std::vector<unsigned int> vec = {coords ...};
         return (*this)(vec);
     }
 
     template<typename ...Ts>
     T& operator()(Ts&& ...coords)
     {
-        const std::vector<int> vec = {coords ...};
+        const std::vector<unsigned int> vec = {coords ...};
         return (*this)(vec);
     }
 
-    T operator()(const std::vector<int>& coords) const
+    T operator()(const std::vector<unsigned int>& coords) const
     {
         return data_[coord_to_index(coords)];
     }
 
-    T& operator()(const std::vector<int>& coords)
+    T& operator()(const std::vector<unsigned int>& coords)
     {
         return data_[coord_to_index(coords)];
     }
 
-    Tensor<T>& reshape(std::vector<int> shape)
+    Tensor<T>& reshape(std::vector<unsigned int> shape)
     {
-        auto new_shape = std::make_shared<std::vector<int>>(shape);
+        auto new_shape = std::make_shared<std::vector<unsigned int>>(shape);
         if (compute_size(new_shape) != compute_size(shape_))
             throw "New shape must be of same size.";
 
@@ -290,7 +290,7 @@ public:
         return op(right, [](const T a, const T b) { return a / b; });
     }
 
-    Tensor<T> extract(std::vector<int> coords) const
+    Tensor<T> extract(std::vector<unsigned int> coords) const
     {
         auto prevdim = coords.size();
         auto shape_size = shape_->size();
@@ -301,7 +301,7 @@ public:
 
         long long begin = coord_to_index(coords);
 
-        std::vector<int> new_shape(0);
+        std::vector<unsigned int> new_shape(0);
         for (auto i = prevdim; i < shape_size; i++)
             new_shape.push_back(shape_->at(i));
         if (!new_shape.size())
@@ -317,7 +317,7 @@ public:
         return reduce(0, [](T a, T b) { return a + b; });
     }
 
-    Tensor<T> sum(std::vector<int> axis)
+    Tensor<T> sum(std::vector<unsigned int> axis)
     {
         return reduce(axis, 0, [](T a, T b) { return a + b; });
     }
@@ -335,12 +335,12 @@ public:
         return res;
     }
 
-    Tensor<T> reduce(std::vector<int> axis, T subtotal_default, std::function<T(T, T)> fn) const
+    Tensor<T> reduce(std::vector<unsigned int> axis, T subtotal_default, std::function<T(T, T)> fn) const
     {
         Tensor<T> res = *this;
 
         // Remove duplicates and sort in descending order
-        std::sort(axis.begin(), axis.end(), std::greater<int>());
+        std::sort(axis.begin(), axis.end(), std::greater<unsigned int>());
         axis.erase(std::unique(axis.begin(), axis.end()), axis.end());
 
         for (int dim : axis)
@@ -351,7 +351,7 @@ public:
     Tensor<T> reduce(unsigned dim, T subtotal_default, std::function<T(T, T)> fn)
     {
         // Compute output shape
-        std::vector<int> output_shape;
+        std::vector<unsigned int> output_shape;
         for (unsigned i = 0; i < shape_->size(); i++)
             if (i != dim)
                 output_shape.push_back(shape_->at(i));
@@ -399,34 +399,34 @@ public:
     * Matrix operations (transpose, matmul)
     */
 
-    Tensor<T> im2col(int kernel_height, int kernel_width, int padding, int stride)
+    Tensor<T> im2col(const unsigned int kernel_height, const unsigned int kernel_width, const unsigned int padding, const unsigned int stride)
     {
-        int img_channels = this->shape_->at(0);
-        int img_height = this->shape_->at(1);
-        int img_width = this->shape_->at(2);
+        const unsigned int img_channels = this->shape_->at(0);
+        const unsigned int img_height = this->shape_->at(1);
+        const unsigned int img_width = this->shape_->at(2);
 
-        int kernel_vertical_shifts = 1 + (img_height + 2 * padding - kernel_height) / stride;
-        int kernel_horizontal_shifts = 1 + (img_width + 2 * padding - kernel_width) / stride;
-        int patch = img_channels * kernel_height * kernel_width;
+        const unsigned int kernel_vertical_shifts = 1 + (img_height + 2 * padding - kernel_height) / stride;
+        const unsigned int kernel_horizontal_shifts = 1 + (img_width + 2 * padding - kernel_width) / stride;
+        const unsigned int patch = img_channels * kernel_height * kernel_width;
 
         Tensor<T> res({ patch, kernel_vertical_shifts * kernel_horizontal_shifts });
 
-        for (int c = 0; c < patch; c++)
+        for (unsigned int c = 0; c < patch; c++)
         {
-            int vertical_offset = (c / kernel_width) % kernel_height;
-            int kernel_offset = c % kernel_width;
-            int channel = c / (kernel_height * kernel_width);
+            const unsigned int vertical_offset = (c / kernel_width) % kernel_height;
+            const unsigned int kernel_offset = c % kernel_width;
+            const unsigned int channel = c / (kernel_height * kernel_width);
 
-            for (int i = 0; i < kernel_vertical_shifts; i++)
+            for (unsigned int i = 0; i < kernel_vertical_shifts; i++)
             {
-                for (int j = 0; j < kernel_horizontal_shifts; j++)
+                for (unsigned int j = 0; j < kernel_horizontal_shifts; j++)
                 {
                     int y = i * stride - padding + vertical_offset;
                     int x = j * stride - padding + kernel_offset;
 
                     T value = 0;
-                    if (y >= 0 && y < img_height && x >= 0 && x < img_width)
-                        value = (*this)({ channel, y, x });
+                    if (y >= 0 && static_cast<unsigned int>(y) < img_height && x >= 0 && static_cast<unsigned int>(x) < img_width)
+                        value = (*this)({ channel, static_cast<unsigned int>(y), static_cast<unsigned int>(x) });
                     res({ c, i * kernel_horizontal_shifts + j }) = value;
                 }
             }
@@ -435,33 +435,33 @@ public:
         return res;
     }
 
-    Tensor<T> col2im(std::vector<int> img_shape, int kernel_height, int kernel_width, int padding, int stride)
+    Tensor<T> col2im(std::vector<unsigned int> img_shape, const unsigned int kernel_height, const unsigned int kernel_width, const unsigned int padding, const unsigned int stride)
     {
-        int img_channels = img_shape[0];
-        int img_height = img_shape[1];
-        int img_width = img_shape[2];
+        const unsigned int img_channels = img_shape[0];
+        const unsigned int img_height = img_shape[1];
+        const unsigned int img_width = img_shape[2];
 
-        int kernel_vertical_shifts = 1 + (img_height + 2 * padding - kernel_height) / stride;
-        int kernel_horizontal_shifts = 1 + (img_width + 2 * padding - kernel_width) / stride;
-        int patch = img_channels * kernel_height * kernel_width;
+        const unsigned int kernel_vertical_shifts = 1 + (img_height + 2 * padding - kernel_height) / stride;
+        const unsigned int kernel_horizontal_shifts = 1 + (img_width + 2 * padding - kernel_width) / stride;
+        const unsigned int patch = img_channels * kernel_height * kernel_width;
 
         Tensor<T> res(img_shape);
 
-        for (int c = 0; c < patch; c++)
+        for (unsigned int c = 0; c < patch; c++)
         {
-            int vertical_offset = (c / kernel_width) % kernel_height;
-            int kernel_offset = c % kernel_width;
-            int channel = c / (kernel_height * kernel_width);
+            const unsigned int vertical_offset = (c / kernel_width) % kernel_height;
+            const unsigned int kernel_offset = c % kernel_width;
+            const unsigned int channel = c / (kernel_height * kernel_width);
 
-            for (int i = 0; i < kernel_vertical_shifts; i++)
+            for (unsigned int i = 0; i < kernel_vertical_shifts; i++)
             {
-                for (int j = 0; j < kernel_horizontal_shifts; j++)
+                for (unsigned int j = 0; j < kernel_horizontal_shifts; j++)
                 {
                     int y = i * stride - padding + vertical_offset;
                     int x = j * stride - padding + kernel_offset;
 
-                    if (y >= 0 && y < img_height && x >= 0 && x < img_width)
-                        res({ channel, y, x }) += (*this)({ c, i * kernel_horizontal_shifts + j });
+                    if (y >= 0 && static_cast<unsigned int>(y) < img_height && x >= 0 && static_cast<unsigned int>(x) < img_width)
+                        res({ channel, static_cast<unsigned int>(y), static_cast<unsigned int>(x) }) += (*this)({ c, i * kernel_horizontal_shifts + j });
                 }
             }
         }
@@ -469,18 +469,18 @@ public:
         return res;
     }
 
-    Tensor<T> transpose(void) const
+    Tensor<T> transpose() const
     {
         assert(data_ != nullptr);
         if (shape_->size() != 2)
             throw "Invalid shape for matrix transpose.";
 
         Tensor<T> res({shape_->at(1), shape_->at(0)});
-        int rows = shape_->at(0);
-        int cols = shape_->at(1);
+        const unsigned int rows = shape_->at(0);
+        const unsigned int cols = shape_->at(1);
 
-        for (int i = 0; i < rows; i++)
-            for (int j = 0; j < cols; j++)
+        for (unsigned int i = 0; i < rows; i++)
+            for (unsigned int j = 0; j < cols; j++)
                 res.data_[offset_ + j * rows + i] = data_[offset_ + i * cols + j];
 
         return res;
@@ -492,21 +492,21 @@ public:
         if (shape_->size() != 2)
             throw "Invalid shape for matrix multiplication.";
 
-        int l_rows = shape_->at(0);
-        int l_cols = shape_->at(1);
-        int r_rows = right.shape_->at(0);
-        int r_cols = right.shape_->at(1);
+        const unsigned int l_rows = shape_->at(0);
+        const unsigned int l_cols = shape_->at(1);
+        const unsigned int r_rows = right.shape_->at(0);
+        const unsigned int r_cols = right.shape_->at(1);
 
         if (r_rows != l_cols)
             throw std::invalid_argument("Invalid shapes for matrix multiplication.");
 
         Tensor<T> res({l_rows, r_cols});
-        for (int r = 0; r < l_rows; r++)
+        for (unsigned int r = 0; r < l_rows; r++)
         {
-            for (int c = 0; c < r_cols; c++)
+            for (unsigned int c = 0; c < r_cols; c++)
             {
                 T tmp = 0;
-                for (int k = 0; k < l_cols; k++)
+                for (unsigned int k = 0; k < l_cols; k++)
                     tmp += data_[r * l_cols + k] * right.data_[k * r_cols + c];
                 res.data_[r * r_cols + c] = tmp;
             }
@@ -520,8 +520,8 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, Tensor& t)
     {
-        std::vector<int> shape = t.get_shape();
-        std::vector<int> coord(shape.size());
+        std::vector<unsigned int> shape = t.get_shape();
+        std::vector<unsigned int> coord(shape.size());
         int l = shape.size() - 1;
 
         int new_line = shape.size();
@@ -564,21 +564,21 @@ public:
 
 private:
     long long size_;
-    std::shared_ptr<std::vector<int>> shape_;
+    std::shared_ptr<std::vector<unsigned int>> shape_;
     std::shared_ptr<T[]> data_;
     long long offset_;
     bool transposed_;
 
-    Tensor(std::vector<int> shape, std::shared_ptr<T[]> data)
+    Tensor(std::vector<unsigned int> shape, std::shared_ptr<T[]> data)
     {
-        shape_ = std::make_shared<std::vector<int>>(shape);
+        shape_ = std::make_shared<std::vector<unsigned int>>(shape);
         size_ = compute_size(shape_);
         data_ = data;
         offset_ = 0;
         transposed_ = false;
     }
 
-    long long compute_size(std::shared_ptr<std::vector<int>> shape)
+    long long compute_size(std::shared_ptr<std::vector<unsigned int>> shape)
     {
         long long res = 1;
         for (auto v : *shape)
@@ -586,7 +586,7 @@ private:
         return res;
     }
 
-    long long coord_to_index(std::vector<int> coords) const
+    long long coord_to_index(std::vector<unsigned int> coords) const
     {
         assert(coords.size() == shape_->size());
         for (unsigned i = 0; i < shape_->size(); i++)
