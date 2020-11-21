@@ -19,17 +19,17 @@ static void xor_example(void)
     SigmoidActivationFunction s     = SigmoidActivationFunction();
 
     // Create model
-    model.add(InputLayer({2}));
-    model.add(DenseLayer(2, s));
-    model.add(DenseLayer(1, s));
+    model.add_layer(InputLayer({2}));
+    model.add_layer(DenseLayer(2, s));
+    model.add_layer(DenseLayer(1, s));
 
     // Create dataset
     DatasetHandler dh;
     dh.read("", set_type::XOR);
 
     // Train model
-    model.compile(0.1);
-    model.train(dh.get_training(), dh.get_labels(), 10000, 1);
+    model.set_learning_rate(0.1);
+    model.train(dh.get_training(), dh.get_labels(), 1, 10000);
 
     // Test the model
     for (size_t i = 0; i < dh.get_training().size(); i++)
@@ -53,15 +53,15 @@ static void cifar_10_example(void)
             set_type::CIFAR_10);
 
     // Create model
-    model.add(InputLayer<model_type>({3, 32, 32}));
+    model.add_layer(InputLayer<model_type>({3, 32, 32}));
 
-    model.add(Conv2DLayer<model_type>(32, {3, 3}, r));
-    model.add(Conv2DLayer<model_type>(64, {3, 3}, r));
-    model.add(MaxPooling2DLayer<model_type>({2, 2}, 0, 2));
+    model.add_layer(Conv2DLayer<model_type>(32, {3, 3}, r));
+    model.add_layer(Conv2DLayer<model_type>(64, {3, 3}, r));
+    model.add_layer(MaxPooling2DLayer<model_type>({2, 2}, 0, 2));
 
-    model.add(FlattenLayer<model_type>());
-    model.add(DenseLayer<model_type>(128, s));
-    model.add(DenseLayer<model_type>(10, s));
+    model.add_layer(FlattenLayer<model_type>());
+    model.add_layer(DenseLayer<model_type>(128, s));
+    model.add_layer(DenseLayer<model_type>(10, s));
 
     // Create dataset
     auto x_train = dh.get_training();
@@ -72,8 +72,8 @@ static void cifar_10_example(void)
     // Just to go from byte to float
 
     // Train model
-    model.compile(0.1);
-    model.train(x_train, y_train, 10, 128);
+    model.set_learning_rate(0.1);
+    model.train(x_train, y_train, 128, 10);
 
     // Evaluate model
     auto res = model.predict(x_train.at(0));
@@ -92,25 +92,25 @@ static void mnist_example(void)
     dh.read("datasets/mnist/", set_type::MNIST);
 
     // Create model
-    // model.add(InputLayer<model_type>({ 1, 28, 28 }));
-    // model.add(FlattenLayer<model_type>());
-    // model.add(DenseLayer<model_type>({ 32 }, r));
-    // model.add(DenseLayer<model_type>({ 10 }, r));
+    // model.add_layer(InputLayer<model_type>({ 1, 28, 28 }));
+    // model.add_layer(FlattenLayer<model_type>());
+    // model.add_layer(DenseLayer<model_type>({ 32 }, r));
+    // model.add_layer(DenseLayer<model_type>({ 10 }, r));
 
-    model.add(InputLayer<model_type>({1, 28, 28}));
-    model.add(Conv2DLayer<model_type>(32, {3, 3}, s));
-    model.add(MaxPooling2DLayer<model_type>({2, 2}, 0, 2));
-    model.add(FlattenLayer<model_type>());
-    model.add(DenseLayer<model_type>(100, s));
-    model.add(DenseLayer<model_type>(10, s));
+    model.add_layer(InputLayer<model_type>({1, 28, 28}));
+    model.add_layer(Conv2DLayer<model_type>(32, {3, 3}, s));
+    model.add_layer(MaxPooling2DLayer<model_type>({2, 2}, 0, 2));
+    model.add_layer(FlattenLayer<model_type>());
+    model.add_layer(DenseLayer<model_type>(100, s));
+    model.add_layer(DenseLayer<model_type>(10, s));
 
     // Create dataset
     auto x_train = dh.get_training();
     auto y_train = dh.get_labels();
 
     // Train model
-    model.compile(0.01);
-    model.train(x_train, y_train, 10, 32);
+    model.set_learning_rate(0.01);
+    model.train(x_train, y_train, 32, 10);
 
     auto res = model.predict(x_train[0]);
     std::cout << x_train[0];

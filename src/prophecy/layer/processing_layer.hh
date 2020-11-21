@@ -24,14 +24,14 @@ class ProcessingLayer : public Layer<T>
     virtual void update(double learning_rate)
     {
         // Update weights_ and biases_
-        this->delta_weights_ *= learning_rate;
-        this->weights_ -= this->delta_weights_;
-        this->delta_biases_ *= learning_rate;
-        this->biases_ -= this->delta_biases_;
+        delta_weights_ *= learning_rate;
+        weights_ -= delta_weights_;
+        delta_biases_ *= learning_rate;
+        biases_ -= delta_biases_;
 
         // Reset delta_weights_ and delta_biases_
-        this->delta_weights_.fill(fill_type::ZEROS);
-        this->delta_biases_.fill(fill_type::ZEROS);
+        delta_weights_.fill(fill_type::ZEROS);
+        delta_biases_.fill(fill_type::ZEROS);
     }
 
   protected:

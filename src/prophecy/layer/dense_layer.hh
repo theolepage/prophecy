@@ -23,17 +23,25 @@ class DenseLayer final : public ProcessingLayer<T>
         std::vector<uint> out_shape = {this->nb_neurons_};
         this->out_shape_ = std::make_shared<std::vector<uint>>(out_shape);
 
-        // Initialize weights and biases
-        this->weights_ =
-            Tensor<T>({this->nb_neurons_, prev.lock()->get_out_shape()[0]});
-        this->biases_ = Tensor<T>({this->nb_neurons_, 1});
+        // Initialize weights and delta_weights
+        const std::vector<uint> w_shape = {this->nb_neurons_,
+                                           prev.lock()->get_out_shape()[0]};
+        if (!this->compiled_ || this->weights_.get_shape() != w_shape)
+        {
+            this->weights_       = Tensor<T>(w_shape);
+            this->delta_weights_ = Tensor<T>(w_shape);
+        }
         this->weights_.fill(fill_type::RANDOM);
-        this->biases_.fill(fill_type::RANDOM);
-
-        // Initialize delta_weights_ and delta_biases_
-        this->delta_weights_ = Tensor<T>(this->weights_.get_shape());
-        this->delta_biases_  = Tensor<T>(this->biases_.get_shape());
         this->delta_weights_.fill(fill_type::ZEROS);
+
+        // Initialize biases and delta_biases
+        const std::vector<uint> b_shape = {this->nb_neurons_, 1};
+        if (!this->compiled_ || this->biases_.get_shape() != b_shape)
+        {
+            this->biases_       = Tensor<T>(b_shape);
+            this->delta_biases_ = Tensor<T>(b_shape);
+        }
+        this->biases_.fill(fill_type::RANDOM);
         this->delta_biases_.fill(fill_type::ZEROS);
 
         this->compiled_ = true;

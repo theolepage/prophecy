@@ -14,95 +14,116 @@ template <typename T = float>
 class Model
 {
   public:
-    Model() : compiled_(false) { srand(time(NULL)); }
+    Model() : compiled_(false), learning_rate_(0.5) { srand(time(NULL)); }
+
+    virtual ~Model() = default;
 
     template <typename L>
-    Model& add(L layer)
+    Model& add_layer(L layer)
     {
+        compiled_ = false;
         layers_.emplace_back(std::make_shared<L>(layer));
+
         return *this;
     }
 
     Tensor<T> predict(const Tensor<T>& input)
     {
+        if (!compiled_)
+            compile();
+
         return layers_[0]->feedforward(input, false);
     }
 
-    virtual ~Model() = default;
+    double get_learning_rate() const { return learning_rate_; }
 
-    void compile(const double learning_rate)
+    void set_learning_rate(const double lr) { learning_rate_ = lr; }
+
+    const T train_batch(std::vector<Tensor<T>>& x,
+                        std::vector<Tensor<T>>& y,
+                        const uint              batch_id,
+                        const uint              batch_size)
     {
-        if (layers_.size() < 2)
-            throw std::invalid_argument(
-                "Model must be composed of at least 2 layers to compile.");
+        T    total_cost;
+        uint sample = batch_id * batch_size;
 
-        learning_rate_ = learning_rate;
-        compiled_      = true;
+        // For each batch, compute delta weights and biases
+        for (uint k = 0; k < batch_size && sample < x.size(); k++)
+        {
+            layers_[0]->feedforward(x[sample], true);
 
-        // Compile first layer
-        layers_[0]->compile(std::weak_ptr<Layer<T>>(), layers_[1]);
+            auto last_layer = layers_[layers_.size() - 1];
+            auto delta      = last_layer->cost(y[sample]);
+            total_cost      = delta.sum()({0});
 
-        // Compile all layers from last to first
-        for (uint i = 1; i < layers_.size() - 1; i++)
-            layers_[i]->compile(layers_[i - 1], layers_[i + 1]);
+            last_layer->backpropagation(delta);
 
-        // Compile last layer
-        const uint last = layers_.size() - 1;
-        layers_[last]->compile(layers_[last - 1], nullptr);
+            sample++;
+        }
+
+        // At the end of batch, update weights_ and biases_
+        update_processing_layers();
+
+        return total_cost;
     }
 
     void train(std::vector<Tensor<T>>& x,
                std::vector<Tensor<T>>& y,
-               const uint              epochs,
-               const uint              batch_size)
+               const uint              batch_size,
+               const uint              epochs)
     {
         if (!compiled_)
-            throw "Model has not been compiled.";
+            compile();
+
+        const uint batch_count = ceil(1.0f * x.size() / batch_size);
 
         for (uint epoch = 0; epoch < epochs; epoch++)
         {
-            T total_cost;
+            T cost;
 
-            // Determine batches
-            uint       i          = 0;
-            const uint nb_batches = ceil(1.0f * x.size() / batch_size);
-            for (uint batch = 0; batch < nb_batches; batch++)
-            {
-                // For each batch, compute delta weights and biases
-                for (uint k = 0; k < batch_size && i < x.size(); k++)
-                {
-                    layers_[0]->feedforward(x[i], true);
+            for (uint batch_id = 0; batch_id < batch_count; batch_id++)
+                cost = train_batch(x, y, batch_id, batch_size);
 
-                    auto last_layer = layers_[layers_.size() - 1];
-                    auto delta      = last_layer->cost(y[i]);
-                    total_cost      = delta.sum()({0});
-                    last_layer->backpropagation(delta);
-
-                    i++;
-                }
-
-                // At the end of batch, update weights_ and biases_
-                for (uint l = 1; l < layers_.size(); l++)
-                {
-                    auto layer = std::dynamic_pointer_cast<ProcessingLayer<T>>(
-                        layers_[l]);
-                    if (layer != nullptr)
-                        layer->update(learning_rate_);
-                }
-            }
-
-            std::cout << "Epoch " << epoch << " completed (loss: " << total_cost
+            std::cout << "Epoch " << epoch << " completed (loss: " << cost
                       << ")\n";
         }
     }
 
-    void summary();
-    void save(const std::string& path);
-    void load(const std::string& path);
-
   private:
-    bool                                   compiled_;
-    double                                 learning_rate_;
+    bool   compiled_;
+    double learning_rate_;
+
     std::vector<std::shared_ptr<Layer<T>>> layers_;
+
+    void compile()
+    {
+        if (layers_.size() < 2)
+            throw std::invalid_argument(
+                "Model must be composed of at least 2 layers.");
+
+        // Link first layer
+        layers_[0]->compile(std::weak_ptr<Layer<T>>(), layers_[1]);
+
+        // Link all layers from last to first
+        for (uint i = 1; i < layers_.size() - 1; i++)
+            layers_[i]->compile(layers_[i - 1], layers_[i + 1]);
+
+        // Link last layer
+        const uint last = layers_.size() - 1;
+        layers_[last]->compile(layers_[last - 1], nullptr);
+
+        compiled_ = true;
+    }
+
+    void update_processing_layers() const
+    {
+        for (uint layer_id = 1; layer_id < layers_.size(); layer_id++)
+        {
+            auto layer   = layers_[layer_id];
+            auto p_layer = std::dynamic_pointer_cast<ProcessingLayer<T>>(layer);
+            if (p_layer != nullptr)
+                p_layer->update(learning_rate_);
+        }
+    }
 };
 } // namespace prophecy

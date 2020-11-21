@@ -45,7 +45,8 @@ class Layer
     Tensor<T>& get_last_z() { return this->last_z_; }
 
   protected:
-    bool                               compiled_;
+    bool compiled_;
+
     std::shared_ptr<std::vector<uint>> out_shape_;
 
     Tensor<T> last_a_;
