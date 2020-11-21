@@ -12,14 +12,14 @@ message(STATUS "---")
 # Set paths to sources
 # ---
 
-include_directories(src)
+include_directories(src/prophecy)
 
 set(SRC
     src/main.cc
 )
 
 set(SRC_CUDA
-    src/kernel.cu
+    src/prophecy/kernel.cu
 )
 
 set(SRC_TESTS
