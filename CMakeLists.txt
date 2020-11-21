@@ -12,6 +12,8 @@ message(STATUS "---")
 # Set paths to sources
 # ---
 
+include_directories(src)
+
 set(SRC
     src/main.cc
 )

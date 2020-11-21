@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../layer/processing_layer.hh"
-#include "../tensor/tensor.hh"
-#include "../activation_function/activation_function.hh"
+#include "layer/processing_layer.hh"
+#include "tensor/tensor.hh"
+#include "activation_function/activation_function.hh"
 
 template <typename T = float>
 class DenseLayer final : public ProcessingLayer<T>

@@ -4,9 +4,9 @@
 #include <string>
 #include <vector>
 
-#include "../layer/input_layer.hh"
-#include "../layer/processing_layer.hh"
-#include "../tensor/tensor.hh"
+#include "layer/input_layer.hh"
+#include "layer/processing_layer.hh"
+#include "tensor/tensor.hh"
 
 template <typename T = float>
 class Model

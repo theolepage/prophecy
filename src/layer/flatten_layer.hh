@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../layer/layer.hh"
-#include "../tensor/tensor.hh"
+#include "layer/layer.hh"
+#include "tensor/tensor.hh"
 
 template <typename T = float>
 class FlattenLayer final : public Layer<T>

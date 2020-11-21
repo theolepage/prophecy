@@ -1,7 +1,7 @@
 #pragma once
 
 #include "layer.hh"
-#include "../tensor/tensor.hh"
+#include "tensor/tensor.hh"
 
 template <typename T = float>
 class InputLayer final : public Layer<T>

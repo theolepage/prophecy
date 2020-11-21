@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "../tensor/tensor.hh"
+#include "tensor/tensor.hh"
 
 template <typename T = float>
 class Layer

@@ -4,8 +4,8 @@
 #include <functional>
 
 #include "layer.hh"
-#include "../tensor/tensor.hh"
-#include "../activation_function/activation_function.hh"
+#include "tensor/tensor.hh"
+#include "activation_function/activation_function.hh"
 
 template <typename T = float>
 class ProcessingLayer : public Layer<T>

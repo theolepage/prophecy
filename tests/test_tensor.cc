@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 
-#include "../src/tensor/tensor.hh"
+#include "tensor/tensor.hh"
 
 static inline int add(int a, int b)
 {
