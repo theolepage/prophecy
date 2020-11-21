@@ -16,11 +16,11 @@ public:
     void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
     {
         // Determine output shape
-        unsigned int prev_size = 1;
+        uint prev_size = 1;
         for (auto dim : prev.lock()->get_out_shape())
             prev_size *= dim;
-        std::vector<unsigned int> out_shape({ prev_size, 1 });
-        this->out_shape_ = std::make_shared<std::vector<unsigned int>>(out_shape);
+        std::vector<uint> out_shape({ prev_size, 1 });
+        this->out_shape_ = std::make_shared<std::vector<uint>>(out_shape);
 
         this->compiled_ = true;
         this->prev_ = prev;

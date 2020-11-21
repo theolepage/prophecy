@@ -11,7 +11,7 @@ template <typename T = float>
 class ProcessingLayer : public Layer<T>
 {
 public:
-    ProcessingLayer(const unsigned int nb_neurons, const ActivationFunction<T>& activation)
+    ProcessingLayer(const uint nb_neurons, const ActivationFunction<T>& activation)
         : Layer<T>()
         , nb_neurons_(nb_neurons)
         , activation_(activation)
@@ -33,7 +33,7 @@ public:
     }
 
 protected:
-    const unsigned int nb_neurons_;
+    const uint nb_neurons_;
 
     Tensor<T> weights_;
     Tensor<T> biases_;

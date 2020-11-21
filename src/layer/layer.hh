@@ -8,8 +8,8 @@ template <typename T = float>
 class Layer
 {
 public:
-    Layer(const std::vector<unsigned int>& out_shape)
-        : out_shape_(std::make_shared<std::vector<unsigned int>>(out_shape))
+    Layer(const std::vector<uint>& out_shape)
+        : out_shape_(std::make_shared<std::vector<uint>>(out_shape))
     {}
 
     Layer()
@@ -35,7 +35,7 @@ public:
         return this->last_a_;
     }
 
-    std::vector<unsigned int> get_out_shape() const { return *this->out_shape_; }
+    std::vector<uint> get_out_shape() const { return *this->out_shape_; }
 
     Tensor<T>& get_last_a() { return this->last_a_; }
 
@@ -43,7 +43,7 @@ public:
 
 protected:
     bool compiled_;
-    std::shared_ptr<std::vector<unsigned int>> out_shape_;
+    std::shared_ptr<std::vector<uint>> out_shape_;
 
     Tensor<T> last_a_;
     Tensor<T> last_z_;

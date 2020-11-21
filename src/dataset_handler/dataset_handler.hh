@@ -1,11 +1,12 @@
 #pragma once
 
-#include "tensor/tensor.hh"
 #include <vector>
 #include <iostream>
 #include <fstream>
 #include <array>
 #include <stdio.h>
+
+#include "tensor/tensor.hh"
 
 using dh_model_type = float;
 
@@ -100,7 +101,7 @@ public:
 private:
     void load_cifar_10(std::string path)
     {
-        unsigned int nb_image = 10000;
+        uint nb_image = 10000;
         static constexpr auto image_width = 32;
         static constexpr auto image_height = 32;
         static constexpr auto channel_size = 3;
@@ -126,26 +127,26 @@ private:
         if (limit_ >= 0 && limit_ < nb_image)
             nb_image = limit_;
 
-        for (unsigned int image = 0; image < nb_image; ++image)
+        for (uint image = 0; image < nb_image; ++image)
         {
-            const unsigned int offset = image * (image_height * image_width * 3 + 1);
+            const uint offset = image * (image_height * image_width * 3 + 1);
             unsigned char value;
             {
                 Tensor<dh_model_type> label({ 10, 1 });
                 label.fill(fill_type::ZEROS);
                 value = buffer[offset];
-                label(static_cast<unsigned int>(value), 0u) = static_cast<dh_model_type>(1);
+                label(static_cast<uint>(value), 0u) = static_cast<dh_model_type>(1);
                 y.emplace_back(label);
             }
 
 
             Tensor<dh_model_type> rgb({ channel_size, image_height, image_width });
 
-            for (unsigned int channel = 0; channel < channel_size; ++channel)
+            for (uint channel = 0; channel < channel_size; ++channel)
             {
-                for (unsigned int y = 0; y < image_height; ++y)
+                for (uint y = 0; y < image_height; ++y)
                 {
-                    for (unsigned int x = 0; x < image_width; ++x)
+                    for (uint x = 0; x < image_width; ++x)
                     {
                         value = buffer[1 + offset + y * image_width + channel * (image_width * image_height) + x];
                         rgb(channel, y, x) = static_cast<dh_model_type>(value);
@@ -160,7 +161,7 @@ private:
     {
         path.append("/train-labels-idx1-ubyte");
 
-        unsigned int nb_image = 60000;
+        uint nb_image = 60000;
 
         // Open file
         std::ifstream file;
@@ -183,12 +184,12 @@ private:
             nb_image = limit_;
 
         // Labels
-        for (unsigned int image = 0; image < nb_image; image++)
+        for (uint image = 0; image < nb_image; image++)
         {
             Tensor<dh_model_type> label({ 10, 1 });
             label.fill(fill_type::ZEROS);
 
-            const unsigned int value = static_cast<unsigned int>(buffer[8 + image]);
+            const uint value = static_cast<uint>(buffer[8 + image]);
 
             label({ value, 0 }) = static_cast<dh_model_type>(1);
             y.emplace_back(label);
@@ -199,7 +200,7 @@ private:
     {
         path.append("/train-images-idx3-ubyte");
 
-        unsigned int nb_image = 60000;
+        uint nb_image = 60000;
         static constexpr auto image_width = 28;
         static constexpr auto image_height = 28;
 
@@ -224,16 +225,16 @@ private:
             nb_image = limit_;
 
         // Images
-        for (unsigned int image = 0; image < nb_image; ++image)
+        for (uint image = 0; image < nb_image; ++image)
         {
             int offset = 16 + image * (image_height * image_width);
             Tensor<dh_model_type> rgb({ 1, image_height, image_width });
 
-            for (unsigned int y = 0; y < image_height; ++y)
+            for (uint y = 0; y < image_height; ++y)
             {
-                for (unsigned int x = 0; x < image_width; ++x)
+                for (uint x = 0; x < image_width; ++x)
                 {
-                    const unsigned int value = static_cast<unsigned int>(buffer[offset + y * image_width + x]);
+                    const uint value = static_cast<uint>(buffer[offset + y * image_width + x]);
                     rgb({ 0, y, x }) = static_cast<dh_model_type>(value / 255.0f);
                 }
             }
@@ -247,7 +248,7 @@ private:
         load_mnist_images(path);
     }
 
-    auto get_xor(const unsigned int a, const unsigned int b)
+    auto get_xor(const uint a, const uint b)
     {
         auto mx = Tensor<dh_model_type>({2u, 1u});
         mx(0u, 0u) = a;

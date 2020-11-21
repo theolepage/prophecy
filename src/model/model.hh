@@ -43,33 +43,33 @@ public:
         layers_[0]->compile(std::weak_ptr<Layer<T>>(), layers_[1]);
 
         // Compile all layers from last to first
-        for (unsigned int i = 1; i < layers_.size() - 1; i++)
+        for (uint i = 1; i < layers_.size() - 1; i++)
             layers_[i]->compile(layers_[i - 1], layers_[i + 1]);
 
         // Compile last layer
-        const unsigned int last = layers_.size() - 1;
+        const uint last = layers_.size() - 1;
         layers_[last]->compile(layers_[last - 1], nullptr);
     }
 
     void train(std::vector<Tensor<T>>& x,
                 std::vector<Tensor<T>>& y,
-                const unsigned int epochs,
-                const unsigned int batch_size)
+                const uint epochs,
+                const uint batch_size)
     {
         if (!compiled_)
             throw "Model has not been compiled.";
 
-        for (unsigned int epoch = 0; epoch < epochs; epoch++)
+        for (uint epoch = 0; epoch < epochs; epoch++)
         {
             T total_cost;
 
             // Determine batches
-            unsigned int i = 0;
-            const unsigned int nb_batches = ceil(1.0f * x.size() / batch_size);
-            for (unsigned int batch = 0; batch < nb_batches; batch++)
+            uint i = 0;
+            const uint nb_batches = ceil(1.0f * x.size() / batch_size);
+            for (uint batch = 0; batch < nb_batches; batch++)
             {
                 // For each batch, compute delta weights and biases
-                for (unsigned int k = 0; k < batch_size && i < x.size(); k++)
+                for (uint k = 0; k < batch_size && i < x.size(); k++)
                 {
                     layers_[0]->feedforward(x[i], true);
 
@@ -82,7 +82,7 @@ public:
                 }
 
                 // At the end of batch, update weights_ and biases_
-                for (unsigned int l = 1; l < layers_.size(); l++)
+                for (uint l = 1; l < layers_.size(); l++)
                 {
                     auto layer = std::dynamic_pointer_cast<ProcessingLayer<T>>(layers_[l]);
                     if (layer != nullptr)

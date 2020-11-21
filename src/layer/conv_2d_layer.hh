@@ -8,22 +8,22 @@ template <typename T = float>
 class Conv2DLayer final : public ProcessingLayer<T>
 {
 public:
-    Conv2DLayer(unsigned int nb_filters,
-                const std::vector<unsigned int>& kernel_shape,
-                const unsigned int padding,
-                const unsigned int stride,
+    Conv2DLayer(uint nb_filters,
+                const std::vector<uint>& kernel_shape,
+                const uint padding,
+                const uint stride,
                 const ActivationFunction<T>& activation)
         : ProcessingLayer<T>(nb_filters, activation)
-        , kernel_shape_(std::make_shared<std::vector<unsigned int>>(kernel_shape))
+        , kernel_shape_(std::make_shared<std::vector<uint>>(kernel_shape))
         , padding_(padding)
         , stride_(stride)
     {}
 
-    Conv2DLayer(const unsigned int nb_filters,
-                const std::vector<unsigned int>& kernel_shape,
+    Conv2DLayer(const uint nb_filters,
+                const std::vector<uint>& kernel_shape,
                 const ActivationFunction<T>& activation)
         : ProcessingLayer<T>(nb_filters, activation)
-        , kernel_shape_(std::make_shared<std::vector<unsigned int>>(kernel_shape))
+        , kernel_shape_(std::make_shared<std::vector<uint>>(kernel_shape))
         , padding_(0)
         , stride_(1)
     {}
@@ -34,11 +34,11 @@ public:
     {
         // Determine output shape
         auto prev_shape = prev.lock()->get_out_shape();
-        const unsigned int c = this->nb_neurons_;
-        const unsigned int h = 1 + (prev_shape[1] + 2 * this->padding_ - this->kernel_shape_->at(0)) / this->stride_;
-        const unsigned int w = 1 + (prev_shape[2] + 2 * this->padding_ - this->kernel_shape_->at(1)) / this->stride_;
-        std::vector<unsigned int> out_shape({ c, h, w });
-        this->out_shape_ = std::make_shared<std::vector<unsigned int>>(out_shape);
+        const uint c = this->nb_neurons_;
+        const uint h = 1 + (prev_shape[1] + 2 * this->padding_ - this->kernel_shape_->at(0)) / this->stride_;
+        const uint w = 1 + (prev_shape[2] + 2 * this->padding_ - this->kernel_shape_->at(1)) / this->stride_;
+        std::vector<uint> out_shape({ c, h, w });
+        this->out_shape_ = std::make_shared<std::vector<uint>>(out_shape);
 
         // Initialize weights and biases
         this->weights_ = Tensor<T>({
@@ -64,9 +64,9 @@ public:
 
     Tensor<T> feedforward(const Tensor<T>& input, bool training)
     {
-        const unsigned int kernel_channels = this->weights_.get_shape()[1];
-        const unsigned int kernel_height = this->weights_.get_shape()[2];
-        const unsigned int kernel_width = this->weights_.get_shape()[3];
+        const uint kernel_channels = this->weights_.get_shape()[1];
+        const uint kernel_height = this->weights_.get_shape()[2];
+        const uint kernel_width = this->weights_.get_shape()[3];
 
         Tensor<T> weights_reshaped(this->weights_);
         weights_reshaped.reshape({
@@ -80,7 +80,7 @@ public:
         auto z = weights_reshaped.matmul(input_reshaped);
         z.reshape(*this->out_shape_);
 
-        for (unsigned int i = 0; i < this->nb_neurons_; i++)
+        for (uint i = 0; i < this->nb_neurons_; i++)
             z.extract({ i }) += this->biases_({ i });
         auto a = z.map(this->activation_.f_);
 
@@ -116,9 +116,9 @@ public:
         this->delta_weights_ += dw.reshape(this->weights_.get_shape());
 
         // Compute delta
-        const unsigned int kernel_channels = this->weights_.get_shape()[1];
-        const unsigned int kernel_height = this->weights_.get_shape()[2];
-        const unsigned int kernel_width = this->weights_.get_shape()[3];
+        const uint kernel_channels = this->weights_.get_shape()[1];
+        const uint kernel_height = this->weights_.get_shape()[2];
+        const uint kernel_width = this->weights_.get_shape()[3];
         Tensor<T> weights_reshaped(this->weights_);
         weights_reshaped.reshape({
             this->nb_neurons_,
@@ -132,13 +132,13 @@ public:
     }
 
 private:
-    std::shared_ptr<std::vector<unsigned int>> kernel_shape_;
-    const unsigned int padding_;
-    const unsigned int stride_;
+    std::shared_ptr<std::vector<uint>> kernel_shape_;
+    const uint padding_;
+    const uint stride_;
 
     Tensor<T> last_a_col_;
 
-    unsigned int dim_after_conv(const unsigned int dim) const
+    uint dim_after_conv(const uint dim) const
     {
         return 1 + (dim + 2 * this->padding_ - this->shape_->at(2)) / this->stride_;
     }

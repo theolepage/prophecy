@@ -8,7 +8,7 @@ template <typename T = float>
 class DenseLayer final : public ProcessingLayer<T>
 {
 public:
-    DenseLayer(const unsigned int nb_neurons, const ActivationFunction<T>& activation)
+    DenseLayer(const uint nb_neurons, const ActivationFunction<T>& activation)
         : ProcessingLayer<T>(nb_neurons, activation)
     {}
 
@@ -17,8 +17,8 @@ public:
     void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
     {
         // Determine output shape
-        std::vector<unsigned int> out_shape = { this->nb_neurons_ };
-        this->out_shape_ = std::make_shared<std::vector<unsigned int>>(out_shape);
+        std::vector<uint> out_shape = { this->nb_neurons_ };
+        this->out_shape_ = std::make_shared<std::vector<uint>>(out_shape);
 
         // Initialize weights and biases
         this->weights_ = Tensor<T>({ this->nb_neurons_, prev.lock()->get_out_shape()[0] });
