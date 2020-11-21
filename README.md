@@ -9,7 +9,7 @@ Check this out Google.
 #include <memory>
 
 #include "model/model.hh"
-#include "layer_implem/dense_layer.hh"
+#include "layer/dense_layer.hh"
 #include "dataset_handler/dataset_handler.hh"
 #include "tensor/tensor.hh"
 

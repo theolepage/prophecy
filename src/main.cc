@@ -4,10 +4,10 @@
 #include "kernel.cuh"
 #include "tensor/tensor.hh"
 #include "model/model.hh"
-#include "layer_implem/dense_layer.hh"
-#include "layer_implem/conv_2d_layer.hh"
-#include "layer_implem/max_pooling_2d_layer.hh"
-#include "layer_implem/flatten_layer.hh"
+#include "layer/dense_layer.hh"
+#include "layer/conv_2d_layer.hh"
+#include "layer/max_pooling_2d_layer.hh"
+#include "layer/flatten_layer.hh"
 #include "dataset_handler/dataset_handler.hh"
 
 using model_type = float;
