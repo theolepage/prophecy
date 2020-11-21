@@ -19,7 +19,7 @@ class Layer
 
     virtual ~Layer() = default;
 
-    virtual void compile(std::weak_ptr<Layer<T>> prev,
+    virtual void compile(std::weak_ptr<Layer<T>>   prev,
                          std::shared_ptr<Layer<T>> next)
     {
         this->compiled_ = true;
@@ -28,7 +28,7 @@ class Layer
     }
 
     virtual Tensor<T> feedforward(const Tensor<T>& input,
-                                  const bool training) = 0;
+                                  const bool       training) = 0;
 
     virtual void backpropagation(Tensor<T>& delta) = 0;
 
@@ -45,13 +45,13 @@ class Layer
     Tensor<T>& get_last_z() { return this->last_z_; }
 
   protected:
-    bool compiled_;
+    bool                               compiled_;
     std::shared_ptr<std::vector<uint>> out_shape_;
 
     Tensor<T> last_a_;
     Tensor<T> last_z_;
 
-    std::weak_ptr<Layer<T>> prev_;
+    std::weak_ptr<Layer<T>>   prev_;
     std::shared_ptr<Layer<T>> next_;
 };
 } // namespace prophecy

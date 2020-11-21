@@ -191,7 +191,7 @@ TEST(test_tensor, test_reduce_two_axis)
     t.fill(fill_type::SEQUENCE);
 
     std::vector<uint> axis{1, 2, 2};
-    Tensor<int> please = t.reduce(axis, 0, add);
+    Tensor<int>       please = t.reduce(axis, 0, add);
 
     ASSERT_EQ(please({0}), 6);
     ASSERT_EQ(please({1}), 22);

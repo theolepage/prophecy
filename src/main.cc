@@ -15,8 +15,8 @@ using model_type = float;
 
 static void xor_example(void)
 {
-    Model model                 = Model();
-    SigmoidActivationFunction s = SigmoidActivationFunction();
+    Model                     model = Model();
+    SigmoidActivationFunction s     = SigmoidActivationFunction();
 
     // Create model
     model.add(InputLayer({2}));
@@ -44,10 +44,10 @@ static void xor_example(void)
 
 static void cifar_10_example(void)
 {
-    Model<model_type> model     = Model<model_type>();
-    SigmoidActivationFunction s = SigmoidActivationFunction<model_type>();
-    ReLUActivationFunction r    = ReLUActivationFunction<model_type>();
-    DatasetHandler dh;
+    Model<model_type>         model = Model<model_type>();
+    SigmoidActivationFunction s     = SigmoidActivationFunction<model_type>();
+    ReLUActivationFunction    r     = ReLUActivationFunction<model_type>();
+    DatasetHandler            dh;
     dh.set_limit(100);
     dh.read("datasets/cifar-10-batches-bin/data_batch_1.bin",
             set_type::CIFAR_10);
@@ -84,10 +84,10 @@ static void cifar_10_example(void)
 
 static void mnist_example(void)
 {
-    Model<model_type> model     = Model<model_type>();
-    SigmoidActivationFunction s = SigmoidActivationFunction<model_type>();
-    ReLUActivationFunction r    = ReLUActivationFunction<model_type>();
-    DatasetHandler dh;
+    Model<model_type>         model = Model<model_type>();
+    SigmoidActivationFunction s     = SigmoidActivationFunction<model_type>();
+    ReLUActivationFunction    r     = ReLUActivationFunction<model_type>();
+    DatasetHandler            dh;
     dh.set_limit(6000);
     dh.read("datasets/mnist/", set_type::MNIST);
 

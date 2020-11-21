@@ -46,7 +46,7 @@ class DatasetHandler
     template <typename MAT_TYPE = float>
     std::vector<Tensor<MAT_TYPE>>
     normalize(const std::vector<Tensor<dh_model_type>>& set,
-              MAT_TYPE value) const
+              MAT_TYPE                                  value) const
     {
         std::vector<Tensor<MAT_TYPE>> norm_set;
         for (const Tensor<dh_model_type>& m : set)
@@ -92,7 +92,7 @@ class DatasetHandler
   private:
     void load_cifar_10(std::string path)
     {
-        uint nb_image                      = 10000;
+        uint                  nb_image     = 10000;
         static constexpr auto image_width  = 32;
         static constexpr auto image_height = 32;
         static constexpr auto channel_size = 3;
@@ -106,7 +106,7 @@ class DatasetHandler
             return;
         }
 
-        auto file_size = file.tellg();
+        auto                    file_size = file.tellg();
         std::unique_ptr<char[]> buffer(new char[file_size]);
 
         // Read the entire file at once
@@ -120,7 +120,7 @@ class DatasetHandler
 
         for (uint image = 0; image < nb_image; ++image)
         {
-            const uint offset = image * (image_height * image_width * 3 + 1);
+            const uint    offset = image * (image_height * image_width * 3 + 1);
             unsigned char value;
             {
                 Tensor<dh_model_type> label({10, 1});
@@ -167,7 +167,7 @@ class DatasetHandler
         }
 
         // Read the entire file at once
-        auto file_size = file.tellg();
+        auto                    file_size = file.tellg();
         std::unique_ptr<char[]> buffer(new char[file_size]);
         file.seekg(0, std::ios::beg);
         file.read(buffer.get(), file_size);
@@ -194,7 +194,7 @@ class DatasetHandler
     {
         path.append("/train-images-idx3-ubyte");
 
-        uint nb_image                      = 60000;
+        uint                  nb_image     = 60000;
         static constexpr auto image_width  = 28;
         static constexpr auto image_height = 28;
 
@@ -208,7 +208,7 @@ class DatasetHandler
         }
 
         // Read the entire file at once
-        auto file_size = file.tellg();
+        auto                    file_size = file.tellg();
         std::unique_ptr<char[]> buffer(new char[file_size]);
         file.seekg(0, std::ios::beg);
         file.read(buffer.get(), file_size);
@@ -282,6 +282,6 @@ class DatasetHandler
 
     std::vector<Tensor<dh_model_type>> x;
     std::vector<Tensor<dh_model_type>> y;
-    long long limit_;
+    long long                          limit_;
 };
 } // namespace prophecy

@@ -332,8 +332,8 @@ class Tensor
         return res;
     }
 
-    Tensor<T> reduce(std::vector<uint> axis,
-                     T subtotal_default,
+    Tensor<T> reduce(std::vector<uint>      axis,
+                     T                      subtotal_default,
                      std::function<T(T, T)> fn) const
     {
         Tensor<T> res = *this;
@@ -358,7 +358,7 @@ class Tensor
         if (output_shape.size() == 0)
             output_shape = {1};
         Tensor<T> res(output_shape);
-        int index = 0;
+        int       index = 0;
 
         // Compute the step
         long long step = 1;
@@ -375,16 +375,16 @@ class Tensor
         return res;
     }
 
-    void reduce_aux(const Tensor<T>& res,
-                    int i,
-                    int step,
-                    int dim,
-                    int& index,
-                    T subtotal_default,
+    void reduce_aux(const Tensor<T>&       res,
+                    int                    i,
+                    int                    step,
+                    int                    dim,
+                    int&                   index,
+                    T                      subtotal_default,
                     std::function<T(T, T)> fn) const
     {
-        int size_dim    = shape_->at(dim);
-        long long begin = i * (step * size_dim);
+        int       size_dim = shape_->at(dim);
+        long long begin    = i * (step * size_dim);
         for (long long i = 0; i < step; i++)
         {
             T subtotal = subtotal_default;
@@ -445,10 +445,10 @@ class Tensor
     }
 
     Tensor<T> col2im(std::vector<uint> img_shape,
-                     const uint kernel_height,
-                     const uint kernel_width,
-                     const uint padding,
-                     const uint stride)
+                     const uint        kernel_height,
+                     const uint        kernel_width,
+                     const uint        padding,
+                     const uint        stride)
     {
         const uint img_channels = img_shape[0];
         const uint img_height   = img_shape[1];
@@ -494,7 +494,7 @@ class Tensor
         if (shape_->size() != 2)
             throw "Invalid shape for matrix transpose.";
 
-        Tensor<T> res({shape_->at(1), shape_->at(0)});
+        Tensor<T>  res({shape_->at(1), shape_->at(0)});
         const uint rows = shape_->at(0);
         const uint cols = shape_->at(1);
 
@@ -543,7 +543,7 @@ class Tensor
     {
         std::vector<uint> shape = t.get_shape();
         std::vector<uint> coord(shape.size());
-        int l = shape.size() - 1;
+        int               l = shape.size() - 1;
 
         int new_line = shape.size();
         for (long long i = 0; i < t.size_; i++)
@@ -584,11 +584,11 @@ class Tensor
     }
 
   private:
-    long long size_;
+    long long                          size_;
     std::shared_ptr<std::vector<uint>> shape_;
-    std::shared_ptr<T[]> data_;
-    long long offset_;
-    bool transposed_;
+    std::shared_ptr<T[]>               data_;
+    long long                          offset_;
+    bool                               transposed_;
 
     Tensor(std::vector<uint> shape, std::shared_ptr<T[]> data)
     {

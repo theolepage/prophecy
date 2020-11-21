@@ -10,8 +10,8 @@ class MaxPooling2DLayer final : public Layer<T>
 {
   public:
     MaxPooling2DLayer(const std::vector<uint>& kernel_shape,
-                      const uint padding,
-                      const uint stride)
+                      const uint               padding,
+                      const uint               stride)
         : Layer<T>(),
           kernel_shape_(std::make_shared<std::vector<uint>>(kernel_shape)),
           padding_(padding), stride_(stride)
@@ -68,7 +68,7 @@ class MaxPooling2DLayer final : public Layer<T>
             {
                 for (uint j = 0; j < out_cols; j++)
                 {
-                    T maximum              = static_cast<T>(-1.0 * 10000.0);
+                    T       maximum        = static_cast<T>(-1.0 * 10000.0);
                     Coord3D maximum_coords = Coord3D(c, i, j);
                     for (uint k = 0; k < kernel_height * kernel_width; k++)
                     {
@@ -112,7 +112,7 @@ class MaxPooling2DLayer final : public Layer<T>
         auto prev = this->prev_.lock();
 
         Tensor<T> new_delta(prev->get_out_shape());
-        uint k = 0;
+        uint      k = 0;
 
         for (uint c = 0; c < delta.get_shape()[0]; c++)
             for (uint i = 0; i < delta.get_shape()[1]; i++)
@@ -139,9 +139,9 @@ class MaxPooling2DLayer final : public Layer<T>
         uint x_, y_, z_;
     };
 
-    std::shared_ptr<std::vector<uint>> kernel_shape_;
-    const uint padding_;
-    const uint stride_;
+    std::shared_ptr<std::vector<uint>>    kernel_shape_;
+    const uint                            padding_;
+    const uint                            stride_;
     std::shared_ptr<std::vector<Coord3D>> mask_indices_;
 };
 } // namespace prophecy
