@@ -5,48 +5,46 @@
 
 namespace prophecy
 {
-    template <typename T = float>
-    class FlattenLayer final : public Layer<T>
+template <typename T = float>
+class FlattenLayer final : public Layer<T>
+{
+  public:
+    FlattenLayer() : Layer<T>() {}
+
+    virtual ~FlattenLayer() = default;
+
+    void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
     {
-    public:
-        FlattenLayer()
-            : Layer<T>()
-        {}
+        // Determine output shape
+        uint prev_size = 1;
+        for (auto dim : prev.lock()->get_out_shape())
+            prev_size *= dim;
+        std::vector<uint> out_shape({prev_size, 1});
+        this->out_shape_ = std::make_shared<std::vector<uint>>(out_shape);
 
-        virtual ~FlattenLayer() = default;
+        this->compiled_ = true;
+        this->prev_     = prev;
+        this->next_     = next;
+    }
 
-        void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
-        {
-            // Determine output shape
-            uint prev_size = 1;
-            for (auto dim : prev.lock()->get_out_shape())
-                prev_size *= dim;
-            std::vector<uint> out_shape({ prev_size, 1 });
-            this->out_shape_ = std::make_shared<std::vector<uint>>(out_shape);
+    Tensor<T> feedforward(const Tensor<T>& input, const bool training)
+    {
+        Tensor<T> out(input);
+        out.reshape(*this->out_shape_);
 
-            this->compiled_ = true;
-            this->prev_ = prev;
-            this->next_ = next;
-        }
+        if (training)
+            this->last_a_ = out;
 
-        Tensor<T> feedforward(const Tensor<T>& input, const bool training)
-        {
-            Tensor<T> out(input);
-            out.reshape(*this->out_shape_);
+        if (this->next_ == nullptr)
+            return input;
+        return this->next_->feedforward(out, training);
+    }
 
-            if (training)
-                this->last_a_ = out;
+    void backpropagation(Tensor<T>& delta)
+    {
+        auto prev = this->prev_.lock();
 
-            if (this->next_ == nullptr)
-                return input;
-            return this->next_->feedforward(out, training);
-        }
-
-        void backpropagation(Tensor<T>& delta)
-        {
-            auto prev = this->prev_.lock();
-
-            prev->backpropagation(delta.reshape(prev->get_out_shape()));
-        }
-    };
-}
+        prev->backpropagation(delta.reshape(prev->get_out_shape()));
+    }
+};
+} // namespace prophecy

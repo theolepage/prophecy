@@ -1,0 +1,19 @@
+# https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+
+UseTab: Never
+IndentWidth: 4
+ColumnLimit: 80
+
+BreakBeforeBraces: Allman
+AlwaysBreakTemplateDeclarations: Yes
+IndentCaseLabels: false
+AlignAfterOpenBracket: Align
+AllowAllParametersOfDeclarationOnNextLine: false
+BinPackArguments: false
+BinPackParameters: false
+
+AlignConsecutiveDeclarations: true
+AlignConsecutiveAssignments: true
+
+AllowShortIfStatementsOnASingleLine: false
+PointerAlignment: Left

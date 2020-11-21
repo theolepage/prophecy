@@ -1,76 +1,77 @@
 #pragma once
 
+#include "activation_function/activation_function.hh"
 #include "layer/processing_layer.hh"
 #include "tensor/tensor.hh"
-#include "activation_function/activation_function.hh"
 
 namespace prophecy
 {
-    template <typename T = float>
-    class DenseLayer final : public ProcessingLayer<T>
+template <typename T = float>
+class DenseLayer final : public ProcessingLayer<T>
+{
+  public:
+    DenseLayer(const uint nb_neurons, const ActivationFunction<T>& activation)
+        : ProcessingLayer<T>(nb_neurons, activation)
     {
-    public:
-        DenseLayer(const uint nb_neurons, const ActivationFunction<T>& activation)
-            : ProcessingLayer<T>(nb_neurons, activation)
-        {}
+    }
 
-        virtual ~DenseLayer() = default;
+    virtual ~DenseLayer() = default;
 
-        void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
+    void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
+    {
+        // Determine output shape
+        std::vector<uint> out_shape = {this->nb_neurons_};
+        this->out_shape_ = std::make_shared<std::vector<uint>>(out_shape);
+
+        // Initialize weights and biases
+        this->weights_ =
+            Tensor<T>({this->nb_neurons_, prev.lock()->get_out_shape()[0]});
+        this->biases_ = Tensor<T>({this->nb_neurons_, 1});
+        this->weights_.fill(fill_type::RANDOM);
+        this->biases_.fill(fill_type::RANDOM);
+
+        // Initialize delta_weights_ and delta_biases_
+        this->delta_weights_ = Tensor<T>(this->weights_.get_shape());
+        this->delta_biases_  = Tensor<T>(this->biases_.get_shape());
+        this->delta_weights_.fill(fill_type::ZEROS);
+        this->delta_biases_.fill(fill_type::ZEROS);
+
+        this->compiled_ = true;
+        this->prev_     = prev;
+        this->next_     = next;
+    }
+
+    Tensor<T> feedforward(const Tensor<T>& input, const bool training)
+    {
+        auto z = this->weights_.matmul(input);
+        z += this->biases_;
+        auto a = z.map(this->activation_.f_);
+
+        if (training)
         {
-            // Determine output shape
-            std::vector<uint> out_shape = { this->nb_neurons_ };
-            this->out_shape_ = std::make_shared<std::vector<uint>>(out_shape);
-
-            // Initialize weights and biases
-            this->weights_ = Tensor<T>({ this->nb_neurons_, prev.lock()->get_out_shape()[0] });
-            this->biases_ = Tensor<T>({ this->nb_neurons_, 1 });
-            this->weights_.fill(fill_type::RANDOM);
-            this->biases_.fill(fill_type::RANDOM);
-
-            // Initialize delta_weights_ and delta_biases_
-            this->delta_weights_ = Tensor<T>(this->weights_.get_shape());
-            this->delta_biases_ = Tensor<T>(this->biases_.get_shape());
-            this->delta_weights_.fill(fill_type::ZEROS);
-            this->delta_biases_.fill(fill_type::ZEROS);
-
-            this->compiled_ = true;
-            this->prev_ = prev;
-            this->next_ = next;
+            this->last_a_ = a;
+            this->last_z_ = z;
         }
 
-        Tensor<T> feedforward(const Tensor<T>& input, const bool training)
-        {
-            auto z = this->weights_.matmul(input);
-            z += this->biases_;
-            auto a = z.map(this->activation_.f_);
+        if (this->next_ == nullptr)
+            return a;
+        return this->next_->feedforward(a, training);
+    }
 
-            if (training)
-            {
-                this->last_a_ = a;
-                this->last_z_ = z;
-            }
+    void backpropagation(Tensor<T>& delta)
+    {
+        auto prev = this->prev_.lock();
 
-            if (this->next_ == nullptr)
-                return a;
-            return this->next_->feedforward(a, training);
-        }
+        this->last_z_.map_inplace(this->activation_.fd_);
+        delta *= this->last_z_;
 
-        void backpropagation(Tensor<T>& delta)
-        {
-            auto prev = this->prev_.lock();
+        // Compute db and dw
+        this->delta_biases_ += delta;
+        this->delta_weights_ += delta.matmul(prev->get_last_a().transpose());
 
-            this->last_z_.map_inplace(this->activation_.fd_);
-            delta *= this->last_z_;
-
-            // Compute db and dw
-            this->delta_biases_ += delta;
-            this->delta_weights_ += delta.matmul(prev->get_last_a().transpose());
-
-            // Compute delta for previous layer and continue backpropagation
-            delta = this->weights_.transpose().matmul(delta);
-            prev->backpropagation(delta);
-        }
-
-    };
-}
+        // Compute delta for previous layer and continue backpropagation
+        delta = this->weights_.transpose().matmul(delta);
+        prev->backpropagation(delta);
+    }
+};
+} // namespace prophecy
