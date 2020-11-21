@@ -1,3 +1,6 @@
 #pragma once
 
-typedef unsigned int uint;
+namespace prophecy
+{
+    typedef unsigned int uint;
+}

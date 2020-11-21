@@ -4,50 +4,53 @@
 
 #include "tensor/tensor.hh"
 
-template <typename T = float>
-class Layer
+namespace prophecy
 {
-public:
-    Layer(const std::vector<uint>& out_shape)
-        : out_shape_(std::make_shared<std::vector<uint>>(out_shape))
-    {}
-
-    Layer()
-        : out_shape_(nullptr)
-    {}
-
-    virtual ~Layer() = default;
-
-    virtual void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
+    template <typename T = float>
+    class Layer
     {
-        this->compiled_ = true;
-        this->prev_ = prev;
-        this->next_ = next;
-    }
+    public:
+        Layer(const std::vector<uint>& out_shape)
+            : out_shape_(std::make_shared<std::vector<uint>>(out_shape))
+        {}
 
-    virtual Tensor<T> feedforward(const Tensor<T>& input, const bool training) = 0;
+        Layer()
+            : out_shape_(nullptr)
+        {}
 
-    virtual void backpropagation(Tensor<T>& delta) = 0;
+        virtual ~Layer() = default;
 
-    virtual Tensor<T>& cost(const Tensor<T>& y)
-    {
-        this->last_a_ -= y;
-        return this->last_a_;
-    }
+        virtual void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
+        {
+            this->compiled_ = true;
+            this->prev_ = prev;
+            this->next_ = next;
+        }
 
-    std::vector<uint> get_out_shape() const { return *this->out_shape_; }
+        virtual Tensor<T> feedforward(const Tensor<T>& input, const bool training) = 0;
 
-    Tensor<T>& get_last_a() { return this->last_a_; }
+        virtual void backpropagation(Tensor<T>& delta) = 0;
 
-    Tensor<T>& get_last_z() { return this->last_z_; }
+        virtual Tensor<T>& cost(const Tensor<T>& y)
+        {
+            this->last_a_ -= y;
+            return this->last_a_;
+        }
 
-protected:
-    bool compiled_;
-    std::shared_ptr<std::vector<uint>> out_shape_;
+        std::vector<uint> get_out_shape() const { return *this->out_shape_; }
 
-    Tensor<T> last_a_;
-    Tensor<T> last_z_;
+        Tensor<T>& get_last_a() { return this->last_a_; }
 
-    std::weak_ptr<Layer<T>> prev_;
-    std::shared_ptr<Layer<T>> next_;
-};
+        Tensor<T>& get_last_z() { return this->last_z_; }
+
+    protected:
+        bool compiled_;
+        std::shared_ptr<std::vector<uint>> out_shape_;
+
+        Tensor<T> last_a_;
+        Tensor<T> last_z_;
+
+        std::weak_ptr<Layer<T>> prev_;
+        std::shared_ptr<Layer<T>> next_;
+    };
+}

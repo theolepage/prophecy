@@ -10,6 +10,7 @@
 #include "layer/flatten_layer.hh"
 #include "dataset_handler/dataset_handler.hh"
 
+using namespace prophecy;
 using model_type = float;
 
 static void xor_example(void)
