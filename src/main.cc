@@ -86,8 +86,8 @@ static void mnist_example(void)
 {
     Model<model_type>         model = Model<model_type>();
     SigmoidActivationFunction s     = SigmoidActivationFunction<model_type>();
-    ReLUActivationFunction    r     = ReLUActivationFunction<model_type>();
-    DatasetHandler            dh;
+    // ReLUActivationFunction    r     = ReLUActivationFunction<model_type>();
+    DatasetHandler dh;
     dh.set_limit(6000);
     dh.read("datasets/mnist/", set_type::MNIST);
 

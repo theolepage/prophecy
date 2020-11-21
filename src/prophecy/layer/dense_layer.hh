@@ -45,7 +45,7 @@ class DenseLayer final : public ProcessingLayer<T>
     {
         auto z = this->weights_.matmul(input);
         z += this->biases_;
-        auto a = z.map(this->activation_.f_);
+        auto a = z.map(this->activation_.get_f());
 
         if (training)
         {
@@ -62,7 +62,7 @@ class DenseLayer final : public ProcessingLayer<T>
     {
         auto prev = this->prev_.lock();
 
-        this->last_z_.map_inplace(this->activation_.fd_);
+        this->last_z_.map_inplace(this->activation_.get_fd());
         delta *= this->last_z_;
 
         // Compute db and dw

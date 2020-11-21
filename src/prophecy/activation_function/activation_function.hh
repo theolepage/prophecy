@@ -10,18 +10,22 @@ template <typename T = float>
 class ActivationFunction
 {
   public:
-    std::function<T(T)> f_;
-    std::function<T(T)> fd_;
+    virtual const std::function<T(T)> get_f() const  = 0;
+    virtual const std::function<T(T)> get_fd() const = 0;
 };
 
 template <typename T = float>
 class LinearActivationFunction final : public ActivationFunction<T>
 {
   public:
-    LinearActivationFunction()
+    const std::function<T(T)> get_f() const
     {
-        this->f_  = [](const T x) { return x; };
-        this->fd_ = [](const T x) { return 1; };
+        return [](const T x) { return x; };
+    }
+
+    const std::function<T(T)> get_fd() const
+    {
+        return [](const T x) { return 1; };
     }
 };
 
@@ -29,12 +33,14 @@ template <typename T = float>
 class SigmoidActivationFunction final : public ActivationFunction<T>
 {
   public:
-    SigmoidActivationFunction()
+    const std::function<T(T)> get_f() const
     {
-        this->f_  = [](const T x) { return 1 / (1 + exp(-x)); };
-        this->fd_ = [this](const T x) {
-            return this->f_(x) * (1 - this->f_(x));
-        };
+        return [](const T x) { return 1 / (1 + exp(-x)); };
+    }
+
+    const std::function<T(T)> get_fd() const
+    {
+        return [this](const T x) { return get_f()(x) * (1 - get_f()(x)); };
     }
 };
 
@@ -42,10 +48,14 @@ template <typename T = float>
 class ReLUActivationFunction final : public ActivationFunction<T>
 {
   public:
-    ReLUActivationFunction()
+    const std::function<T(T)> get_f() const
     {
-        this->f_  = [](const T x) { return (x > 0) ? x : 0; };
-        this->fd_ = [this](const T x) { return (x > 0) ? 1 : 0; };
+        return [](const T x) { return (x > 0) ? x : 0; };
+    }
+
+    const std::function<T(T)> get_fd() const
+    {
+        return [](const T x) { return (x > 0) ? 1 : 0; };
     }
 };
 } // namespace prophecy
