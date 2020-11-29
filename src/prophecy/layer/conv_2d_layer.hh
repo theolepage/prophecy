@@ -10,20 +10,20 @@ template <typename T = float>
 class Conv2DLayer final : public ProcessingLayer<T>
 {
   public:
-    Conv2DLayer(uint                         nb_filters,
-                const std::vector<uint>&     kernel_shape,
-                const uint                   padding,
-                const uint                   stride,
-                const ActivationFunction<T>& activation)
+    explicit Conv2DLayer(uint                         nb_filters,
+                         const std::vector<uint>&     kernel_shape,
+                         const uint                   padding,
+                         const uint                   stride,
+                         const ActivationFunction<T>& activation)
         : ProcessingLayer<T>(nb_filters, activation),
           kernel_shape_(std::make_shared<std::vector<uint>>(kernel_shape)),
           padding_(padding), stride_(stride)
     {
     }
 
-    Conv2DLayer(const uint                   nb_filters,
-                const std::vector<uint>&     kernel_shape,
-                const ActivationFunction<T>& activation)
+    explicit Conv2DLayer(const uint                   nb_filters,
+                         const std::vector<uint>&     kernel_shape,
+                         const ActivationFunction<T>& activation)
         : ProcessingLayer<T>(nb_filters, activation),
           kernel_shape_(std::make_shared<std::vector<uint>>(kernel_shape)),
           padding_(0), stride_(1)
@@ -35,9 +35,10 @@ class Conv2DLayer final : public ProcessingLayer<T>
     void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next)
     {
         // Determine output shape
-        auto       prev_shape = prev.lock()->get_out_shape();
-        const uint c          = this->nb_neurons_;
-        const uint h          = 1 + (prev_shape[1] + 2 * this->padding_ -
+        auto prev_shape = prev.lock()->get_out_shape();
+
+        const uint c = this->nb_neurons_;
+        const uint h = 1 + (prev_shape[1] + 2 * this->padding_ -
                             this->kernel_shape_->at(0)) /
                                this->stride_;
         const uint w = 1 + (prev_shape[2] + 2 * this->padding_ -
@@ -86,7 +87,8 @@ class Conv2DLayer final : public ProcessingLayer<T>
              kernel_channels * kernel_height * kernel_width});
 
         Tensor<T> in(input);
-        auto      input_reshaped = in.im2col(
+
+        auto input_reshaped = in.im2col(
             kernel_height, kernel_width, this->padding_, this->stride_);
 
         auto z = weights_reshaped.matmul(input_reshaped);

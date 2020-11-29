@@ -10,7 +10,8 @@ template <typename T = float>
 class DenseLayer final : public ProcessingLayer<T>
 {
   public:
-    DenseLayer(const uint nb_neurons, const ActivationFunction<T>& activation)
+    explicit DenseLayer(const uint                   nb_neurons,
+                        const ActivationFunction<T>& activation)
         : ProcessingLayer<T>(nb_neurons, activation)
     {
     }

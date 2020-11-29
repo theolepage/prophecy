@@ -13,8 +13,8 @@ template <typename T = float>
 class ProcessingLayer : public Layer<T>
 {
   public:
-    ProcessingLayer(const uint                   nb_neurons,
-                    const ActivationFunction<T>& activation)
+    explicit ProcessingLayer(const uint                   nb_neurons,
+                             const ActivationFunction<T>& activation)
         : Layer<T>(), nb_neurons_(nb_neurons), activation_(activation)
     {
     }

@@ -9,7 +9,10 @@ template <typename T = float>
 class InputLayer final : public Layer<T>
 {
   public:
-    InputLayer(const std::vector<uint>& out_shape) : Layer<T>(out_shape) {}
+    explicit InputLayer(const std::vector<uint>& out_shape)
+        : Layer<T>(out_shape)
+    {
+    }
 
     virtual ~InputLayer() = default;
 

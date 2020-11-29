@@ -9,7 +9,7 @@ template <typename T = float>
 class FlattenLayer final : public Layer<T>
 {
   public:
-    FlattenLayer() : Layer<T>() {}
+    explicit FlattenLayer() : Layer<T>() {}
 
     virtual ~FlattenLayer() = default;
 

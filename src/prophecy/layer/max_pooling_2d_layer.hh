@@ -9,16 +9,16 @@ template <typename T = float>
 class MaxPooling2DLayer final : public Layer<T>
 {
   public:
-    MaxPooling2DLayer(const std::vector<uint>& kernel_shape,
-                      const uint               padding,
-                      const uint               stride)
+    explicit MaxPooling2DLayer(const std::vector<uint>& kernel_shape,
+                               const uint               padding,
+                               const uint               stride)
         : Layer<T>(),
           kernel_shape_(std::make_shared<std::vector<uint>>(kernel_shape)),
           padding_(padding), stride_(stride)
     {
     }
 
-    MaxPooling2DLayer(const std::vector<uint>& kernel_shape)
+    explicit MaxPooling2DLayer(const std::vector<uint>& kernel_shape)
         : Layer<T>(),
           kernel_shape_(std::make_shared<std::vector<uint>>(kernel_shape)),
           padding_(0), stride_(1)

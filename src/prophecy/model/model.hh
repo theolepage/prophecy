@@ -14,7 +14,10 @@ template <typename T = float>
 class Model
 {
   public:
-    Model() : compiled_(false), learning_rate_(0.5) { srand(time(NULL)); }
+    explicit Model() : compiled_(false), learning_rate_(0.5)
+    {
+        srand(time(NULL));
+    }
 
     virtual ~Model() = default;
 

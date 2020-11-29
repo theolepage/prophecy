@@ -10,12 +10,12 @@ template <typename T = float>
 class Layer
 {
   public:
-    Layer(const std::vector<uint>& out_shape)
+    explicit Layer(const std::vector<uint>& out_shape)
         : out_shape_(std::make_shared<std::vector<uint>>(out_shape))
     {
     }
 
-    Layer() : out_shape_(nullptr) {}
+    explicit Layer() : out_shape_(nullptr) {}
 
     virtual ~Layer() = default;
 
