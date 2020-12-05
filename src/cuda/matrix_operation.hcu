@@ -1,0 +1,162 @@
+#pragma once
+
+#include "cuda.h"
+#include "cuda_runtime_api.h"
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"   // CUDA includes
+
+#include "cuda_memory_allocator.hcu"
+#include "pitched_matrix.hcu"
+
+#include <iostream>
+
+/* gpu_bin_op stays commented until we find a way to speedup malloc/cpy gpu side
+template<typename T>
+using func_t = T(*) (T, T);
+
+template <typename T>
+__device__ __forceinline__ T add_func(const T x, const T y)
+{
+    return x + y;
+}
+
+template <typename T>
+__device__ __forceinline__ T mul_func(const T x, const T y)
+{
+    return x * y;
+}
+
+template <typename T>
+__device__ func_t<T> p_add_func = add_func<T>;
+template <typename T>
+__device__ func_t<T> p_mul_func = mul_func<T>;
+
+template <typename T>
+__global__ void kernel_bin_op(PitchedMatrix<T> d_l_matrix, PitchedMatrix<T> d_r_matrix, PitchedMatrix<T> d_result_matrix, func_t<T> op)
+{
+    const int x = threadIdx.x + blockIdx.x * blockDim.x;
+    const int y = threadIdx.y + blockIdx.y * blockDim.y;
+    if (x < d_result_matrix.width_ && y < d_result_matrix.height_) // Boundary check
+    {
+        const int result_indice = x + y * d_result_matrix.pitch_;
+        d_result_matrix.data_[result_indice] = (*op)(d_l_matrix.data_[result_indice], d_r_matrix.data_[result_indice]);
+    }
+}
+
+template <typename T>
+Tensor<T> cuda_bin_op(const Tensor<T>& h_left, const Tensor<T>& h_right)
+{
+    const int height = h_left.shape_->at(0);
+    const int width = h_left.shape_->at(1);
+    Tensor<T> h_result(*h_left.shape_);
+
+    PitchedMatrix<T> d_left(h_left.data_.get(), height, width);
+    PitchedMatrix<T> d_right(h_right.data_.get(), height, width);
+    PitchedMatrix<T> d_result(height, width);
+
+    constexpr auto thread_per_block = 128;
+    const int block_in_grid = static_cast<int>(ceil(static_cast<float>(width * height) / static_cast<float>(thread_per_block)));
+    const dim3 block_size(thread_per_block, 1, 1);
+    const dim3 grid_size(block_in_grid, 1, 1);
+
+    func_t<T> d_add_func;
+    cudaMemcpyFromSymbol(&d_add_func, p_add_func<T>, sizeof(func_t<T>));
+
+    kernel_bin_op<T><<<grid_size, block_size>>>(d_left, d_right, d_result, d_add_func);
+    cudaDeviceSynchronize();
+
+    d_result.copy_back_data(h_result.data_.get());
+    d_left.free_device_memory();
+    d_right.free_device_memory();
+    d_result.free_device_memory();
+    return h_result;
+}
+*/
+
+template <typename T>
+class Tensor;
+
+#define tile_size_matmul 16
+
+// Copy is ok since the class it so small, avoids the cudaMalloc of the class
+template <typename T>
+__global__ void kernel_matmult(PitchedMatrix<T> d_l_matrix, PitchedMatrix<T> d_r_matrix, PitchedMatrix<T> d_result_matrix)
+{
+    __shared__ T left_tile[tile_size_matmul][tile_size_matmul];
+    __shared__ T right_tile[tile_size_matmul][tile_size_matmul];
+
+    const int global_y = blockDim.y * blockIdx.y + threadIdx.y;
+    const int global_x = blockDim.x * blockIdx.x + threadIdx.x;
+
+    constexpr T zero = static_cast<T>(0);
+    T result = zero;
+    left_tile[threadIdx.y][threadIdx.x] = zero;
+    right_tile[threadIdx.y][threadIdx.x] = zero;
+
+    for (int k = 0; k < (((d_l_matrix.width_ - 1) / tile_size_matmul) + 1); k++)
+    {
+        if ( (global_y < d_l_matrix.height_) && ((threadIdx.x + (k * tile_size_matmul)) < d_l_matrix.width_) ) // Cause last tile might be smaller
+        {
+            left_tile[threadIdx.y][threadIdx.x] = d_l_matrix.get(global_y, threadIdx.x + (k * tile_size_matmul));
+        }
+        else
+        {
+            left_tile[threadIdx.y][threadIdx.x] = zero; // At the end we already write the full tile to we need to back suze the rest are 0s
+        }
+
+        if ( (global_x < d_r_matrix.width_) && ((threadIdx.y + k * tile_size_matmul) < d_r_matrix.height_) )
+        {
+            right_tile[threadIdx.y][threadIdx.x] = d_r_matrix.get(threadIdx.y + k * tile_size_matmul, global_x);
+        }
+        else
+        {
+            right_tile[threadIdx.y][threadIdx.x] = zero;
+        }
+
+        __syncthreads(); // All thread are done with copying to shared memory
+
+        #pragma unroll
+        for (int j = 0; j < tile_size_matmul; ++j)
+        {
+            //printf("%f %f\n", left_tile[threadIdx.y][j], right_tile[j][threadIdx.x]);
+            result += left_tile[threadIdx.y][j] * right_tile[j][threadIdx.x];
+        }
+
+        __syncthreads(); // We need to be sure that threads from the block are done with the tiles before starting to write them again
+    }
+
+    if (global_y < d_result_matrix.height_ && global_x < d_result_matrix.width_) // Only threads inside the boundary need to write
+    {
+        d_result_matrix.get(global_y, global_x) = result;
+    }
+}
+
+template <typename T>
+void init_cuda_matrix(T** dst, T* src, size_t* pitch, size_t height, size_t width)
+{
+    cmalloc<T>(dst, pitch, height, width);
+    cmemcpy<T>(*dst, src, *pitch, height, width, cudaMemcpyHostToDevice);
+}
+
+template <typename T>
+Tensor<T> cuda_matmul(const Tensor<T>& h_left, const Tensor<T>& h_right)
+{
+    Tensor<T> h_result({ h_left.shape_->at(0), h_right.shape_->at(1) });
+
+    PitchedMatrix<T> d_left(h_left.data_.get(), h_left.shape_->at(0), h_left.shape_->at(1));
+    PitchedMatrix<T> d_right(h_right.data_.get(), h_right.shape_->at(0), h_right.shape_->at(1));
+    PitchedMatrix<T> d_result(h_result.shape_->at(0), h_result.shape_->at(1));
+
+    const int grid_width = static_cast<int>(ceil(static_cast<float>(h_result.shape_->at(1)) / static_cast<float>(tile_size_matmul)));
+    const int grid_height = static_cast<int>(ceil(static_cast<float>(h_result.shape_->at(0)) / static_cast<float>(tile_size_matmul)));
+    const dim3 block_size(tile_size_matmul, tile_size_matmul, 1);
+    const dim3 grid_size(grid_width, grid_height, 1);
+
+    kernel_matmult<T><<<grid_size, block_size>>>(d_left, d_right, d_result);
+
+    d_result.copy_back_data(h_result.data_.get());
+    d_left.free_device_memory();
+    d_right.free_device_memory();
+    d_result.free_device_memory();
+    return h_result;
+}

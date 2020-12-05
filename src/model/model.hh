@@ -3,10 +3,13 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <time.h>
+#include <omp.h>
 
 #include "../layer/input_layer.hh"
 #include "../layer/processing_layer.hh"
 #include "../tensor/tensor.hh"
+
 
 template <typename T = float>
 class Model
@@ -52,8 +55,8 @@ public:
 
     void train(std::vector<Tensor<T>>& x,
                 std::vector<Tensor<T>>& y,
-                int epochs,
-                int batch_size)
+                const int epochs,
+                const int batch_size)
     {
         if (!compiled_)
             throw "Model has not been compiled.";
@@ -65,6 +68,8 @@ public:
             // Determine batches
             int i = 0;
             int nb_batches = ceil(1.0f * x.size() / batch_size);
+
+            #pragma omp parallel for
             for (int batch = 0; batch < nb_batches; batch++)
             {
                 // For each batch, compute delta weights and biases

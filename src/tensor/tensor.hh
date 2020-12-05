@@ -7,6 +7,16 @@
 #include <cstdarg>
 #include <algorithm>
 #include <iostream>
+#include <vector>
+#include <omp.h>
+
+/*#ifdef GPU
+    #include "cuda.h"
+    #include "cuda_runtime_api.h"
+    #include "cuda_runtime.h"
+    #include "device_launch_parameters.h"   // CUDA includes
+    #include "../cuda/matrix_operation.hcu"
+#endif*/
 
 enum class fill_type
 {
@@ -27,6 +37,18 @@ template <typename T>
 class Tensor
 {
 public:
+
+    /*#ifdef CUDA
+        /
+         Friendship with CUDA (cause we love CUDA)
+        /
+
+        template <typename T>
+        friend void init_cuda_matrix(T** dst, T* src, size_t* pitch, size_t height, size_t width);
+
+        template <typename T>
+        friend Tensor<T> cuda_matmul(const Tensor<T>& h_left, const Tensor<T>& h_right);
+    #endif*/
 
     /**
     * Constructors
@@ -134,6 +156,8 @@ public:
     void fill(FUNCTOR_TYPE& func)
     {
         assert(data_ != nullptr);
+
+        #pragma omp parallel for
         for (int i = offset_; i < size_; ++i)
             data_[i] = func();
     }
@@ -142,6 +166,7 @@ public:
     {
         assert(data_ != nullptr);
 
+        #pragma omp parallel for
         for (long long i = offset_; i < size_; i++)
             data_[i] = value_initializer();
     }
@@ -150,6 +175,7 @@ public:
     {
         assert(data_ != nullptr);
 
+        #pragma omp parallel for
         for (long long i = offset_; i < size_; i++)
             data_[i] = value;
     }
@@ -166,7 +192,7 @@ public:
                 break;
             case fill_type::SEQUENCE:
                 for (long long i = offset_; i < size_; i++)
-                    data_[i] = i;
+                    data_[i] = static_cast<T>(i);
                 break;
             case fill_type::ZEROS:
                 for (long long i = offset_; i < size_; i++)
@@ -183,8 +209,10 @@ public:
     {
         assert(data_ != nullptr);
 
+        #pragma omp parallel for
         for (long long i = offset_; i < size_; i++)
             data_[i] = value_initializer(data_[i]);
+
         return *this;
     }
 
@@ -193,8 +221,11 @@ public:
         assert(data_ != nullptr);
 
         Tensor<T> res(*shape_);
+
+        #pragma omp parallel for
         for (long long i = offset_; i < size_; i++)
             res.data_[i] = value_initializer(data_[i]);
+
         return res;
     }
 
@@ -205,8 +236,11 @@ public:
             throw std::invalid_argument("Operations requires the two tensors to have the same shape.");
 
         Tensor<T> res(*shape_);
+
+        #pragma omp parallel for
         for (long long i = offset_; i < size_; i++)
             res.data_[i] = fn(data_[i], right.data_[i]);
+        
         return res;
     }
 
@@ -216,8 +250,10 @@ public:
         if (*shape_ != *right.shape_)
             throw std::invalid_argument("Operations requires the two tensors to have the same shape.");
 
+        #pragma omp parallel for
         for (long long i = offset_; i < size_; i++)
             data_[i] = fn(data_[i], right.data_[i]);
+
         return *this;
     }
 
@@ -225,8 +261,10 @@ public:
     {
         assert(data_ != nullptr);
 
+        #pragma omp parallel for
         for (int i = offset_; i < size_; i++)
             data_[i] = fn(data_[i], val);
+
         return *this;
     }
 
@@ -491,6 +529,12 @@ public:
         assert(data_ != nullptr);
         if (shape_->size() != 2)
             throw "Invalid shape for matrix multiplication.";
+
+        /*#ifdef GPU
+            static constexpr auto big_enough = 70 * 70; // At matrix 70x70, GPU becomes faster
+            if (size_ >= big_enough)
+                return cuda_matmul<T>(*this, right);
+        #endif*/
 
         int l_rows = shape_->at(0);
         int l_cols = shape_->at(1);

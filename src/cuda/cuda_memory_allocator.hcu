@@ -1,0 +1,44 @@
+#pragma once
+
+#ifndef __CUDA_SAFE_CALL
+#define __CUDA_SAFE_CALL(call) do { cudaError_t cuda_error = call; if(cuda_error != cudaSuccess) { std::cerr << "CUDA Error: " << cudaGetErrorString(cuda_error) << ", " << __FILE__ << ", line " << __LINE__ << std::endl;} } while(0)
+#endif
+
+#include "cuda.h"
+#include "cuda_runtime_api.h"
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"   // CUDA includes
+
+#include <iostream>
+#include <cassert>
+
+template <typename T>
+void cmalloc(T** dst, size_t* pitch, const size_t height, const size_t width)
+{
+	__CUDA_SAFE_CALL(cudaMallocPitch((void**)dst, pitch, width * sizeof(T), height));
+}
+
+template <typename T>
+void cmemcpy(T* dst, const T* src, const size_t pitch, const size_t height, const size_t width, const cudaMemcpyKind kind)
+{
+	const int full_width = width * sizeof(T);
+
+	if (kind == cudaMemcpyHostToDevice) // dst is pitched
+		__CUDA_SAFE_CALL(cudaMemcpy2DAsync(dst, pitch, src, full_width, full_width, height, kind));
+	else if (kind == cudaMemcpyDeviceToHost) // src is pitched
+		__CUDA_SAFE_CALL(cudaMemcpy2DAsync(dst, full_width, src, pitch, full_width, height, kind));
+	else
+		assert(false); // Should only be used for those 2
+}
+
+void cfree(void* ptr)
+{
+	__CUDA_SAFE_CALL(cudaFree(ptr));
+}
+
+/*
+template <typename T>
+void cmemcpy_symbol(T* dst, T symbol, const size_t size)
+{
+	__CUDA_SAFE_CALL(cudaMemcpyFromSymbol(dst, symbol, size));
+}*/

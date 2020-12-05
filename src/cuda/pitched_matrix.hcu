@@ -1,0 +1,60 @@
+#pragma once
+
+#include "cuda.h"
+#include "cuda_runtime_api.h"
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"   // CUDA includes
+
+#include "cuda_memory_allocator.hcu"
+
+template <class T>
+class PitchedMatrix
+{
+public:
+    __host__
+    PitchedMatrix(const size_t height, const size_t width)
+    {
+        cmalloc<T>(&data_, (size_t*)(&pitch_), height, width);
+        height_ = height;
+        width_ = width;
+        pitch_ /= sizeof(T);
+    }
+
+    __host__
+    PitchedMatrix(T* h_array, const size_t height, const size_t width) : PitchedMatrix(height, width)
+    {
+        cmemcpy<T>(data_, h_array, static_cast<size_t>(pitch_ * sizeof(T)), height, width, cudaMemcpyHostToDevice);
+    }
+
+    __host__
+    T* copy_back_data(T* storage)
+    {
+        cmemcpy<T>(storage, this->data_ , static_cast<size_t>(pitch_ * sizeof(T)), height_, width_, cudaMemcpyDeviceToHost);
+        cudaDeviceSynchronize();
+        return storage;
+    }
+
+    __device__
+    T get(int y, int x) const
+    {
+        return data_[x + y * pitch_];
+    }
+
+    __device__
+    T& get(int y, int x)
+    {
+        return data_[x + y * pitch_];
+    }
+
+    __host__
+    void free_device_memory(void)
+    {
+        cfree(data_);
+    }
+
+
+    T* __restrict__ data_;
+    int pitch_; // weighted by the sizeof(T), to allow fast index calculation
+    int height_;
+    int width_;
+};
