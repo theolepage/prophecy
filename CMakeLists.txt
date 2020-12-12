@@ -11,6 +11,7 @@ set(SRC
 
 set(SRC_CUDA
     src/kernel.cu
+    src/cuda_tools/cuda_memory.cu
 )
 
 set(SRC_TESTS

@@ -1,0 +1,19 @@
+#pragma once
+
+/*! \brief Wrapper around cudaMalloc to handle errors
+*
+* This function uses the error handling from Common.cuh (cudaSafeCall)
+* A program built in error WILL abort in case of error
+*
+* cudaXMalloc should be templated to avoid casting in (void**) (like cudaMalloc)
+* Various attempts were made to template it (just add template or use a .cuhxx file)
+* None worked, if you find a way, feel free to do it, the code would be cleaner
+*
+* \param devPtr The device pointer to allocate.
+* \param size Size in byte to allocate.
+*/
+template <typename T>
+void cudaXMalloc(T** devPtr, size_t size)
+{
+    cuda_safe_call(cudaMalloc(devPtr, size));
+}
