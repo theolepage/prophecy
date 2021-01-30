@@ -15,7 +15,9 @@ class ProcessingLayer : public Layer<T>
   public:
     explicit ProcessingLayer(const uint                   nb_neurons,
                              const ActivationFunction<T>& activation)
-        : Layer<T>(), nb_neurons_(nb_neurons), activation_(activation)
+        : Layer<T>()
+        , nb_neurons_(nb_neurons)
+        , activation_(activation)
     {
     }
 

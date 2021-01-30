@@ -14,7 +14,9 @@ template <typename T = float>
 class Model
 {
   public:
-    explicit Model() : compiled_(false), learning_rate_(0.5)
+    explicit Model()
+        : compiled_(false)
+        , learning_rate_(0.5)
     {
         srand(time(NULL));
     }
@@ -35,7 +37,7 @@ class Model
         if (!compiled_)
             compile();
 
-        return layers_[0]->feedforward(input, false);
+        return layers_[0]->feedforward(input);
     }
 
     double get_learning_rate() const { return learning_rate_; }

@@ -15,5 +15,7 @@ BinPackParameters: false
 AlignConsecutiveDeclarations: true
 AlignConsecutiveAssignments: true
 
+BreakConstructorInitializers: BeforeComma
+
 AllowShortIfStatementsOnASingleLine: false
 PointerAlignment: Left

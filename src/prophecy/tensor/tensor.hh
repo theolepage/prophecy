@@ -35,7 +35,13 @@ class Tensor
      * Constructors
      */
 
-    Tensor() : size_(0), shape_(0), data_(nullptr), transposed_(false) {}
+    Tensor()
+        : size_(0)
+        , shape_(0)
+        , data_(nullptr)
+        , transposed_(false)
+    {
+    }
 
     Tensor(const std::vector<uint>& shape)
     {

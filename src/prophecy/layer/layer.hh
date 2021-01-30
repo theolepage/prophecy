@@ -11,11 +11,16 @@ class Layer
 {
   public:
     explicit Layer(const std::vector<uint>& out_shape)
-        : out_shape_(std::make_shared<std::vector<uint>>(out_shape))
+        : compiled_(false)
+        , out_shape_(std::make_shared<std::vector<uint>>(out_shape))
+
     {
     }
 
-    explicit Layer() : out_shape_(nullptr) {}
+    explicit Layer()
+        : out_shape_(nullptr)
+    {
+    }
 
     virtual ~Layer() = default;
 
@@ -28,7 +33,7 @@ class Layer
     }
 
     virtual Tensor<T> feedforward(const Tensor<T>& input,
-                                  const bool       training) = 0;
+                                  const bool       training = false) = 0;
 
     virtual void backpropagation(Tensor<T>& delta) = 0;
 
