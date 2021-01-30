@@ -1,22 +1,51 @@
 #include <iostream>
 #include <memory>
 
-#include "dataset_handler/dataset_handler.hh"
 #include "kernel.cuh"
-#include "layer/conv_2d_layer.hh"
 #include "layer/dense_layer.hh"
-#include "layer/flatten_layer.hh"
-#include "layer/max_pooling_2d_layer.hh"
 #include "model/model.hh"
 #include "tensor/tensor.hh"
 
 using namespace prophecy;
 using model_type = float;
 
+auto get_xor(const uint a, const uint b)
+{
+    auto mx    = Tensor<model_type>({2u, 1u});
+    mx(0u, 0u) = a;
+    mx(1u, 0u) = b;
+
+    auto my    = Tensor<model_type>({1u, 1u});
+    my(0u, 0u) = a ^ b;
+
+    return std::make_pair(mx, my);
+}
+
+static void load_xor(std::vector<Tensor<model_type>>& x,
+                     std::vector<Tensor<model_type>>& y)
+{
+    auto a = get_xor(0, 0);
+    x.emplace_back(a.first);
+    y.emplace_back(a.second);
+
+    auto b = get_xor(0, 1);
+    x.emplace_back(b.first);
+    y.emplace_back(b.second);
+
+    auto c = get_xor(1, 0);
+    x.emplace_back(c.first);
+    y.emplace_back(c.second);
+
+    auto d = get_xor(1, 1);
+    x.emplace_back(d.first);
+    y.emplace_back(d.second);
+}
+
 static void xor_example(void)
 {
-    Model                     model = Model();
-    SigmoidActivationFunction s     = SigmoidActivationFunction();
+    Model model = Model();
+
+    SigmoidActivationFunction s = SigmoidActivationFunction();
 
     // Create model
     model.add_layer(InputLayer({2}));
@@ -24,129 +53,27 @@ static void xor_example(void)
     model.add_layer(DenseLayer(1, s));
 
     // Create dataset
-    DatasetHandler dh;
-    dh.read("", set_type::XOR);
+    std::vector<Tensor<model_type>> x;
+    std::vector<Tensor<model_type>> y;
+    load_xor(x, y);
 
     // Train model
     model.set_learning_rate(0.1);
-    model.train(dh.get_training(), dh.get_labels(), 1, 10000);
+    model.train(x, y, 1, 10000);
 
     // Test the model
-    for (size_t i = 0; i < dh.get_training().size(); i++)
+    for (size_t i = 0; i < x.size(); i++)
     {
-        auto x   = dh.get_training().at(i);
-        auto x_t = x.transpose();
-        auto y   = model.predict(x);
+        auto x_i = x.at(i);
+        auto x_t = x_i.transpose();
+        auto y   = model.predict(x_i);
         std::cout << "Input:  " << x_t;
         std::cout << "Output: " << y << std::endl;
     }
 }
 
-static void cifar_10_example(void)
-{
-    Model<model_type>         model = Model<model_type>();
-    SigmoidActivationFunction s     = SigmoidActivationFunction<model_type>();
-    ReLUActivationFunction    r     = ReLUActivationFunction<model_type>();
-    DatasetHandler            dh;
-    dh.set_limit(100);
-    dh.read("datasets/cifar-10-batches-bin/data_batch_1.bin",
-            set_type::CIFAR_10);
-
-    // Create model
-    model.add_layer(InputLayer<model_type>({3, 32, 32}));
-
-    model.add_layer(Conv2DLayer<model_type>(32, {3, 3}, r));
-    model.add_layer(Conv2DLayer<model_type>(64, {3, 3}, r));
-    model.add_layer(MaxPooling2DLayer<model_type>({2, 2}, 0, 2));
-
-    model.add_layer(FlattenLayer<model_type>());
-    model.add_layer(DenseLayer<model_type>(128, s));
-    model.add_layer(DenseLayer<model_type>(10, s));
-
-    // Create dataset
-    auto x_train = dh.get_training();
-    auto y_train = dh.get_labels();
-    // auto x_train = dh.normalize<model_type>(dh.get_training(),
-    // static_cast<model_type>(255)); auto y_train =
-    // dh.normalize<model_type>(dh.get_labels(), static_cast<model_type>(1)); //
-    // Just to go from byte to float
-
-    // Train model
-    model.set_learning_rate(0.1);
-    model.train(x_train, y_train, 128, 10);
-
-    // Evaluate model
-    auto res = model.predict(x_train.at(0));
-    std::cout << x_train[0];
-    std::cout << res;
-    std::cout << y_train[0];
-}
-
-static void mnist_example(void)
-{
-    Model<model_type>         model = Model<model_type>();
-    SigmoidActivationFunction s     = SigmoidActivationFunction<model_type>();
-    // ReLUActivationFunction    r     = ReLUActivationFunction<model_type>();
-    DatasetHandler dh;
-    dh.set_limit(6000);
-    dh.read("datasets/mnist/", set_type::MNIST);
-
-    // Create model
-    // model.add_layer(InputLayer<model_type>({ 1, 28, 28 }));
-    // model.add_layer(FlattenLayer<model_type>());
-    // model.add_layer(DenseLayer<model_type>({ 32 }, r));
-    // model.add_layer(DenseLayer<model_type>({ 10 }, r));
-
-    model.add_layer(InputLayer<model_type>({1, 28, 28}));
-    model.add_layer(Conv2DLayer<model_type>(32, {3, 3}, s));
-    model.add_layer(MaxPooling2DLayer<model_type>({2, 2}, 0, 2));
-    model.add_layer(FlattenLayer<model_type>());
-    model.add_layer(DenseLayer<model_type>(100, s));
-    model.add_layer(DenseLayer<model_type>(10, s));
-
-    // Create dataset
-    auto x_train = dh.get_training();
-    auto y_train = dh.get_labels();
-
-    // Train model
-    model.set_learning_rate(0.01);
-    model.train(x_train, y_train, 32, 10);
-
-    auto res = model.predict(x_train[0]);
-    std::cout << x_train[0];
-    std::cout << res;
-    std::cout << y_train[0];
-
-    res = model.predict(x_train[1]);
-    std::cout << x_train[1];
-    std::cout << res;
-    std::cout << y_train[1];
-
-    res = model.predict(x_train[2]);
-    std::cout << x_train[2];
-    std::cout << res;
-    std::cout << y_train[2];
-}
-
 int main(void)
 {
-#ifdef CUDA_ENABLED
-    kernel();
-#endif
-
-    switch (0)
-    {
-    case 0:
-        xor_example();
-        break;
-    case 1:
-        cifar_10_example();
-        break;
-    case 2:
-        mnist_example();
-        break;
-    default:
-        xor_example();
-    }
+    xor_example();
     return 0;
 }
