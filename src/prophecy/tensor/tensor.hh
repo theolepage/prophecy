@@ -7,6 +7,7 @@
 #include <iostream>
 #include <memory>
 #include <ostream>
+#include <vector>
 
 #include "utils/utils.hh"
 

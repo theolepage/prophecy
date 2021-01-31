@@ -6,6 +6,10 @@
 #include "model/model.hh"
 #include "tensor/tensor.hh"
 
+#include "xtensor/xarray.hpp"
+#include "xtensor/xio.hpp"
+#include <iostream>
+
 using namespace prophecy;
 using model_type = float;
 
@@ -75,5 +79,9 @@ static void xor_example(void)
 int main(void)
 {
     xor_example();
+
+    // xt::xarray<double> arr1{{1.0, 2.0, 3.0}, {2.0, 5.0, 7.0},
+    // {2.0, 5.0, 7.0}}; std::cout << arr1;
+
     return 0;
 }

@@ -1,0 +1,5 @@
+[requires]
+xtensor/0.20.10@omaralvarez/public-conan
+
+[generators]
+cmake
