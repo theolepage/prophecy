@@ -4,9 +4,9 @@ Check this out Google.
 
 ## Compilation
 
-1. `conan remote add omaralvarez https://api.bintray.com/conan/omaralvarez/public-conan`
-2. `mkdir build; cd build;`
-3. `conan install .. --build=missing`
+1. `source /opt/anaconda/bin/activate root`
+2. `sudo conda install -c conda-forge xtensor xtensor-blas openblas lapack`
+3. `mkdir build; cd build`
 4. `cmake ..`
 5. `make`
 

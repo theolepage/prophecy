@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.17)
 project(prophecy LANGUAGES CXX)
 
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup()
+find_package(xtl REQUIRED)
+find_package(xtensor REQUIRED)
+find_package(xtensor-blas REQUIRED)
+find_package(BLAS REQUIRED)
+find_package(LAPACK REQUIRED)
 
 include(CheckLanguage)
 check_language(CUDA)
@@ -15,7 +18,9 @@ message(STATUS "---")
 # Set paths to sources
 # ---
 
-include_directories(src/prophecy)
+include_directories(src/prophecy
+                    ${xtensor_INCLUDE_DIRS}
+                    ${xtensor_blas_INCLUDE_DIRS})
 
 set(SRC
     src/main.cc
@@ -78,8 +83,14 @@ endif()
 # ---
 
 add_executable(${PROJECT_NAME} ${SRC})
-target_link_libraries(${PROJECT_NAME} ${CONAN_LIBS})
 
+message("BLAS: ${BLAS_LIBRARIES}")
+
+target_link_libraries(${PROJECT_NAME}
+                      xtensor
+                      xtensor::optimize
+                      ${LAPACK_LIBRARIES}
+                      ${BLAS_LIBRARIES})
 
 # ---
 # Create targets for unit tests

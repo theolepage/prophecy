@@ -6,9 +6,9 @@
 #include "model/model.hh"
 #include "tensor/tensor.hh"
 
+#include "xtensor-blas/xlinalg.hpp"
 #include "xtensor/xarray.hpp"
 #include "xtensor/xio.hpp"
-#include <iostream>
 
 using namespace prophecy;
 using model_type = float;
@@ -80,8 +80,11 @@ int main(void)
 {
     xor_example();
 
-    // xt::xarray<double> arr1{{1.0, 2.0, 3.0}, {2.0, 5.0, 7.0},
-    // {2.0, 5.0, 7.0}}; std::cout << arr1;
+    xt::xarray<double> arr1{{1.0, 2.0, 3.0}, {2.0, 5.0, 7.0}, {2.0, 5.0, 7.0}};
+    std::cout << arr1;
+
+    xt::xarray<float> a  = xt::ones<float>({5, 3});
+    auto              r1 = xt::linalg::dot(a, xt::transpose(a));
 
     return 0;
 }
