@@ -1,12 +1,13 @@
 #pragma once
 
+#include <ctime>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "layer/input_layer.hh"
 #include "layer/processing_layer.hh"
-#include "tensor/tensor.hh"
+#include "xtensor/xarray.hpp"
 
 namespace prophecy
 {
@@ -21,20 +22,20 @@ class Model
     template <typename L>
     Model& add_layer(L layer);
 
-    Tensor<T> predict(const Tensor<T>& input);
+    xt::xarray<T> predict(const xt::xarray<T>& input);
 
     double get_learning_rate() const;
     void   set_learning_rate(const double lr);
 
-    const T train_batch(std::vector<Tensor<T>>& x,
-                        std::vector<Tensor<T>>& y,
-                        const uint              batch_id,
-                        const uint              batch_size);
+    const xt::xarray<T> train_batch(std::vector<xt::xarray<T>>& x,
+                                    std::vector<xt::xarray<T>>& y,
+                                    const uint                  batch_id,
+                                    const uint                  batch_size);
 
-    void train(std::vector<Tensor<T>>& x,
-               std::vector<Tensor<T>>& y,
-               const uint              batch_size,
-               const uint              epochs);
+    void train(std::vector<xt::xarray<T>>& x,
+               std::vector<xt::xarray<T>>& y,
+               const uint                  batch_size,
+               const uint                  epochs);
 
   private:
     bool   compiled_;
@@ -52,7 +53,7 @@ Model<T>::Model()
     : compiled_(false)
     , learning_rate_(0.5)
 {
-    srand(time(NULL));
+    xt::random::seed(time(NULL));
 }
 
 template <typename T>
@@ -66,7 +67,7 @@ Model<T>& Model<T>::add_layer(L layer)
 }
 
 template <typename T>
-Tensor<T> Model<T>::predict(const Tensor<T>& input)
+xt::xarray<T> Model<T>::predict(const xt::xarray<T>& input)
 {
     if (!compiled_)
         compile();
@@ -87,13 +88,14 @@ void Model<T>::set_learning_rate(const double lr)
 }
 
 template <typename T>
-const T Model<T>::train_batch(std::vector<Tensor<T>>& x,
-                              std::vector<Tensor<T>>& y,
-                              const uint              batch_id,
-                              const uint              batch_size)
+const xt::xarray<T> Model<T>::train_batch(std::vector<xt::xarray<T>>& x,
+                                          std::vector<xt::xarray<T>>& y,
+                                          const uint                  batch_id,
+                                          const uint batch_size)
 {
-    T    total_cost = 0;
-    uint sample     = batch_id * batch_size;
+    xt::xarray<T> total_cost = 0;
+
+    uint sample = batch_id * batch_size;
 
     // For each batch, compute delta weights and biases
     for (uint k = 0; k < batch_size && sample < x.size(); k++)
@@ -102,7 +104,7 @@ const T Model<T>::train_batch(std::vector<Tensor<T>>& x,
 
         auto last_layer = layers_[layers_.size() - 1];
         auto delta      = last_layer->cost(y[sample]);
-        total_cost      = delta.sum()({0});
+        total_cost      = xt::sum(delta);
 
         last_layer->backpropagation(delta);
 
@@ -116,10 +118,10 @@ const T Model<T>::train_batch(std::vector<Tensor<T>>& x,
 }
 
 template <typename T>
-void Model<T>::train(std::vector<Tensor<T>>& x,
-                     std::vector<Tensor<T>>& y,
-                     const uint              batch_size,
-                     const uint              epochs)
+void Model<T>::train(std::vector<xt::xarray<T>>& x,
+                     std::vector<xt::xarray<T>>& y,
+                     const uint                  batch_size,
+                     const uint                  epochs)
 {
     if (!compiled_)
         compile();
@@ -128,7 +130,7 @@ void Model<T>::train(std::vector<Tensor<T>>& x,
 
     for (uint epoch = 0; epoch < epochs; epoch++)
     {
-        T cost;
+        xt::xarray<T> cost;
 
         for (uint batch_id = 0; batch_id < batch_count; batch_id++)
             cost = train_batch(x, y, batch_id, batch_size);

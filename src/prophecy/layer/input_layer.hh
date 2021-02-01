@@ -1,7 +1,6 @@
 #pragma once
 
 #include "layer.hh"
-#include "tensor/tensor.hh"
 
 namespace prophecy
 {
@@ -13,9 +12,9 @@ class InputLayer final : public Layer<T>
 
     virtual ~InputLayer() = default;
 
-    Tensor<T> feedforward(const Tensor<T>& input, bool training);
+    xt::xarray<T> feedforward(const xt::xarray<T>& input, bool training);
 
-    void backpropagation(Tensor<T>&);
+    void backpropagation(xt::xarray<T>&);
 };
 
 template <typename T>
@@ -25,14 +24,15 @@ InputLayer<T>::InputLayer(const std::vector<uint>& out_shape)
 }
 
 template <typename T>
-Tensor<T> InputLayer<T>::feedforward(const Tensor<T>& input, bool training)
+xt::xarray<T> InputLayer<T>::feedforward(const xt::xarray<T>& input,
+                                         bool                 training)
 {
     this->last_a_ = input;
     return this->next_->feedforward(input, training);
 }
 
 template <typename T>
-void InputLayer<T>::backpropagation(Tensor<T>&)
+void InputLayer<T>::backpropagation(xt::xarray<T>&)
 {
     return;
 }

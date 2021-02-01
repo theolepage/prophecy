@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "tensor/tensor.hh"
+#include "xtensor/xarray.hpp"
 
 namespace prophecy
 {
@@ -18,24 +18,24 @@ class Layer
     virtual void compile(std::weak_ptr<Layer<T>>   prev,
                          std::shared_ptr<Layer<T>> next);
 
-    virtual Tensor<T> feedforward(const Tensor<T>& input,
-                                  const bool       training = false) = 0;
+    virtual xt::xarray<T> feedforward(const xt::xarray<T>& input,
+                                      const bool training = false) = 0;
 
-    virtual void backpropagation(Tensor<T>& delta) = 0;
+    virtual void backpropagation(xt::xarray<T>& delta) = 0;
 
-    virtual Tensor<T>& cost(const Tensor<T>& y);
+    virtual xt::xarray<T>& cost(const xt::xarray<T>& y);
 
     std::vector<uint> get_out_shape() const;
-    Tensor<T>&        get_last_a();
-    Tensor<T>&        get_last_z();
+    xt::xarray<T>&    get_last_a();
+    xt::xarray<T>&    get_last_z();
 
   protected:
     bool compiled_;
 
     std::shared_ptr<std::vector<uint>> out_shape_;
 
-    Tensor<T> last_a_;
-    Tensor<T> last_z_;
+    xt::xarray<T> last_a_;
+    xt::xarray<T> last_z_;
 
     std::weak_ptr<Layer<T>>   prev_;
     std::shared_ptr<Layer<T>> next_;
@@ -65,7 +65,7 @@ void Layer<T>::compile(std::weak_ptr<Layer<T>>   prev,
 }
 
 template <typename T>
-Tensor<T>& Layer<T>::cost(const Tensor<T>& y)
+xt::xarray<T>& Layer<T>::cost(const xt::xarray<T>& y)
 {
     this->last_a_ -= y;
     return this->last_a_;
@@ -78,13 +78,13 @@ std::vector<uint> Layer<T>::get_out_shape() const
 }
 
 template <typename T>
-Tensor<T>& Layer<T>::get_last_a()
+xt::xarray<T>& Layer<T>::get_last_a()
 {
     return this->last_a_;
 }
 
 template <typename T>
-Tensor<T>& Layer<T>::get_last_z()
+xt::xarray<T>& Layer<T>::get_last_z()
 {
     return this->last_z_;
 }

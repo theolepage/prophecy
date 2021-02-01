@@ -5,7 +5,6 @@
 
 #include "activation_function/activation_function.hh"
 #include "layer.hh"
-#include "tensor/tensor.hh"
 
 namespace prophecy
 {
@@ -23,11 +22,11 @@ class ProcessingLayer : public Layer<T>
   protected:
     const uint nb_neurons_;
 
-    Tensor<T> weights_;
-    Tensor<T> biases_;
+    xt::xarray<T> weights_;
+    xt::xarray<T> biases_;
 
-    Tensor<T> delta_weights_;
-    Tensor<T> delta_biases_;
+    xt::xarray<T> delta_weights_;
+    xt::xarray<T> delta_biases_;
 
     const ActivationFunction<T>& activation_;
 };
@@ -51,7 +50,7 @@ void ProcessingLayer<T>::update(double learning_rate)
     biases_ -= delta_biases_;
 
     // Reset delta_weights_ and delta_biases_
-    delta_weights_.fill(fill_type::ZEROS);
-    delta_biases_.fill(fill_type::ZEROS);
+    delta_weights_ = xt::zeros<T>(weights_.shape());
+    delta_biases_  = xt::zeros<T>(biases_.shape());
 }
 } // namespace prophecy

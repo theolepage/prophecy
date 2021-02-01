@@ -2,7 +2,10 @@
 
 #include "activation_function/activation_function.hh"
 #include "layer/processing_layer.hh"
-#include "tensor/tensor.hh"
+#include "xtensor-blas/xlinalg.hpp"
+#include "xtensor/xadapt.hpp"
+#include "xtensor/xrandom.hpp"
+#include "xtensor/xvectorize.hpp"
 
 namespace prophecy
 {
@@ -17,9 +20,9 @@ class DenseLayer final : public ProcessingLayer<T>
 
     void compile(std::weak_ptr<Layer<T>> prev, std::shared_ptr<Layer<T>> next);
 
-    Tensor<T> feedforward(const Tensor<T>& input, const bool training);
+    xt::xarray<T> feedforward(const xt::xarray<T>& input, const bool training);
 
-    void backpropagation(Tensor<T>& delta);
+    void backpropagation(xt::xarray<T>& delta);
 };
 
 template <typename T>
@@ -40,23 +43,13 @@ void DenseLayer<T>::compile(std::weak_ptr<Layer<T>>   prev,
     // Initialize weights and delta_weights
     const std::vector<uint> w_shape = {this->nb_neurons_,
                                        prev.lock()->get_out_shape()[0]};
-    if (!this->compiled_ || this->weights_.get_shape() != w_shape)
-    {
-        this->weights_       = Tensor<T>(w_shape);
-        this->delta_weights_ = Tensor<T>(w_shape);
-    }
-    this->weights_.fill(fill_type::RANDOM);
-    this->delta_weights_.fill(fill_type::ZEROS);
+    this->weights_                  = xt::random::randn<T>(w_shape, 0, 1);
+    this->delta_weights_            = xt::zeros<T>(w_shape);
 
     // Initialize biases and delta_biases
     const std::vector<uint> b_shape = {this->nb_neurons_, 1};
-    if (!this->compiled_ || this->biases_.get_shape() != b_shape)
-    {
-        this->biases_       = Tensor<T>(b_shape);
-        this->delta_biases_ = Tensor<T>(b_shape);
-    }
-    this->biases_.fill(fill_type::RANDOM);
-    this->delta_biases_.fill(fill_type::ZEROS);
+    this->biases_                   = xt::random::randn<T>(b_shape, 0, 1);
+    this->delta_biases_             = xt::zeros<T>(b_shape);
 
     this->compiled_ = true;
     this->prev_     = prev;
@@ -64,12 +57,15 @@ void DenseLayer<T>::compile(std::weak_ptr<Layer<T>>   prev,
 }
 
 template <typename T>
-Tensor<T> DenseLayer<T>::feedforward(const Tensor<T>& input,
-                                     const bool       training)
+xt::xarray<T> DenseLayer<T>::feedforward(const xt::xarray<T>& input,
+                                         const bool           training)
 {
-    auto z = this->weights_.matmul(input);
+    auto z = xt::linalg::dot(this->weights_, input);
+
     z += this->biases_;
-    auto a = z.map(this->activation_.get_f());
+
+    auto f = xt::vectorize(this->activation_.get_f());
+    auto a = f(z);
 
     if (training)
     {
@@ -83,19 +79,22 @@ Tensor<T> DenseLayer<T>::feedforward(const Tensor<T>& input,
 }
 
 template <typename T>
-void DenseLayer<T>::backpropagation(Tensor<T>& delta)
+void DenseLayer<T>::backpropagation(xt::xarray<T>& delta)
 {
     auto prev = this->prev_.lock();
 
-    this->last_z_.map_inplace(this->activation_.get_fd());
+    auto fd = xt::vectorize(this->activation_.get_fd());
+
+    this->last_z_ = fd(this->last_z_);
     delta *= this->last_z_;
 
     // Compute db and dw
     this->delta_biases_ += delta;
-    this->delta_weights_ += delta.matmul(prev->get_last_a().transpose());
+    this->delta_weights_ +=
+        xt::linalg::dot(delta, xt::transpose(prev->get_last_a()));
 
     // Compute delta for previous layer and continue backpropagation
-    delta = this->weights_.transpose().matmul(delta);
+    delta = xt::linalg::dot(xt::transpose(this->weights_), delta);
     prev->backpropagation(delta);
 }
 } // namespace prophecy
