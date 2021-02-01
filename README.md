@@ -5,7 +5,7 @@ Check this out Google.
 ## Compilation
 
 1. `source /opt/anaconda/bin/activate root`
-2. `sudo conda install -c conda-forge xtensor xtensor-blas openblas lapack`
+2. `sudo conda install -c conda-forge xtensor xtensor-blas openblas lapack xtensor-python pybind11`
 3. `mkdir build; cd build`
 4. `cmake ..`
 5. `make`

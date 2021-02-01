@@ -1,11 +1,15 @@
 cmake_minimum_required(VERSION 3.17)
 project(prophecy LANGUAGES CXX)
 
+# set(PYBIND11_PYTHON_VERSION 3.9)
+find_package(pybind11 REQUIRED)
+
 find_package(xtl REQUIRED)
 find_package(xtensor REQUIRED)
 find_package(xtensor-blas REQUIRED)
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
+find_package(xtensor-python REQUIRED)
 
 include(CheckLanguage)
 check_language(CUDA)
@@ -20,7 +24,9 @@ message(STATUS "---")
 
 include_directories(src/prophecy
                     ${xtensor_INCLUDE_DIRS}
-                    ${xtensor_blas_INCLUDE_DIRS})
+                    ${xtensor_blas_INCLUDE_DIRS}
+                    ${xtensor_python_INCLUDE_DIRS}
+                    /usr/include/python3.9)
 
 set(SRC
     src/main.cc
@@ -31,20 +37,20 @@ set(SRC_CUDA
 )
 
 set(SRC_TESTS
-    tests/test_example.cc
-    tests/test_tensor.cc
+    # tests/test_example.cc
+    # tests/test_tensor.cc
 )
 
 # ---
 # Set compilation flags and C++ standard
 # ---
 
-set(OPT_FLAGS "-Ofast -march=native -flto")
+# set(OPT_FLAGS "-Ofast -march=native -flto")
 
 set(CMAKE_CXX_STANDARD 17) # 17 instead of 20 for xtensor support
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wextra -pedantic")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${OPT_FLAGS}")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g3 -fsanitize=address")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wextra -pedantic")
+# set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${OPT_FLAGS}")
+# set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g3 -fsanitize=address")
 
 set(CMAKE_CUDA_STANDARD 20)
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O2")
@@ -82,15 +88,17 @@ endif()
 # Create target `prophecy`
 # ---
 
-add_executable(${PROJECT_NAME} ${SRC})
-
-message("BLAS: ${BLAS_LIBRARIES}")
-
-target_link_libraries(${PROJECT_NAME}
+pybind11_add_module(${PROJECT_NAME} SHARED ${SRC})
+# add_executable(${PROJECT_NAME} ${SRC})
+target_link_libraries(${PROJECT_NAME} PRIVATE
                       xtensor
                       xtensor::optimize
                       ${LAPACK_LIBRARIES}
                       ${BLAS_LIBRARIES})
+
+add_custom_command(TARGET ${PROJECT_NAME}
+                   POST_BUILD COMMAND
+                   mv prophecy.cpython-38-x86_64-linux-gnu.so prophecy.cpython-39-x86_64-linux-gnu.so)
 
 # ---
 # Create targets for unit tests
