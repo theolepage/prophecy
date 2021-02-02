@@ -17,7 +17,7 @@ PYBIND11_MODULE(prophecy, m)
 
     m.doc() = "Python bindings for Prophecy";
 
-    pybind11::class_<py_model>(m, "ProphecyModel")
+    pybind11::class_<py_model>(m, "Model")
         .def(pybind11::init<>())
         .def("predict", &py_model::predict)
         .def("train", &py_model::train)
