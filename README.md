@@ -1,6 +1,6 @@
 # prophecy
 
-Check this out Google.
+A deep neural networks framework similar to Keras and written from scratch in C++/CUDA.
 
 ## Compilation
 
@@ -12,48 +12,34 @@ Check this out Google.
 
 ## Usage
 
-```cpp
-#include <iostream>
-#include <memory>
+Open a Python3 interpreter in the build folder and create a simple model to learn the XOR gate.
 
-#include "model/model.hh"
-#include "layer/dense_layer.hh"
-#include "dataset_handler/dataset_handler.hh"
-#include "tensor/tensor.hh"
+```python
+import prophecy as p
+import numpy as np
 
-using model_type = float;
+model = p.Model()
 
+model.add(p.layers.input(2))
+model.add(p.layers.dense(2, p.activations.sigmoid()))
+model.add(p.layers.dense(1, p.activations.sigmoid()))
 
-int main(void)
-{
-    Model<model_type> model = Model<model_type>();
-    SigmoidActivationFunction s = SigmoidActivationFunction<model_type>();
+# Create dataset
+x = np.array([0, 0, 0, 1, 1, 0, 1, 1])
+y = np.array([0, 1, 1, 0])
+x = x.reshape([4, 2, 1]);
+y = y.reshape([4, 1, 1]);
+# print(x, x.shape)
+# print(y, y.shape)
 
-    // Create model
-    model.add(new InputLayer<model_type>(2));
-    model.add(new DenseLayer<model_type>(2, s));
-    model.add(new DenseLayer<model_type>(1, s));
+# Train
+model.set_learning_rate(0.1)
+model.train(x, y, 1, 10000)
 
-    // Create dataset
-    DatasetHandler dh;
-    dh.read(nullptr, set_type::XOR);
-
-    // Train model
-    model.compile(0.1);
-    model.train(dh.get_training(), dh.get_labels(), 10000, 1);
-
-    // Test the model
-    for (size_t i = 0; i < dh.get_training().size(); i++)
-    {
-        auto x = dh.get_training().at(i);
-        auto x_t = x.transpose();
-        auto y = model.predict(x);
-        std::cout << "Input:  " << x_t;
-        std::cout << "Output: " << y << std::endl;
-    }
-
-    return 0;
-}
+# Evaluate
+for x_i in x:
+    print("Input", x_i.T)
+    print("Output", model.predict(x_i))
 
 ```
 
