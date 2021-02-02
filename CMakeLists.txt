@@ -29,7 +29,7 @@ include_directories(src/prophecy
                     /usr/include/python3.9)
 
 set(SRC
-    src/main.cc
+    src/prophecy/python_module.cc
 )
 
 set(SRC_CUDA
@@ -89,16 +89,11 @@ endif()
 # ---
 
 pybind11_add_module(${PROJECT_NAME} SHARED ${SRC})
-# add_executable(${PROJECT_NAME} ${SRC})
 target_link_libraries(${PROJECT_NAME} PRIVATE
                       xtensor
                       xtensor::optimize
                       ${LAPACK_LIBRARIES}
                       ${BLAS_LIBRARIES})
-
-add_custom_command(TARGET ${PROJECT_NAME}
-                   POST_BUILD COMMAND
-                   mv prophecy.cpython-38-x86_64-linux-gnu.so prophecy.cpython-39-x86_64-linux-gnu.so)
 
 # ---
 # Create targets for unit tests

@@ -19,23 +19,17 @@ class Model
 
     virtual ~Model() = default;
 
-    template <typename L>
-    Model& add_layer(L layer);
+    Model& add(const std::shared_ptr<Layer<T>>& layer);
 
     xt::xarray<T> predict(const xt::xarray<T>& input);
 
     double get_learning_rate() const;
     void   set_learning_rate(const double lr);
 
-    const xt::xarray<T> train_batch(std::vector<xt::xarray<T>>& x,
-                                    std::vector<xt::xarray<T>>& y,
-                                    const uint                  batch_id,
-                                    const uint                  batch_size);
-
-    void train(std::vector<xt::xarray<T>>& x,
-               std::vector<xt::xarray<T>>& y,
-               const uint                  batch_size,
-               const uint                  epochs);
+    void train(const xt::xarray<T>& x,
+               const xt::xarray<T>& y,
+               const uint           batch_size,
+               const uint           epochs);
 
   private:
     bool   compiled_;
@@ -44,6 +38,11 @@ class Model
     std::vector<std::shared_ptr<Layer<T>>> layers_;
 
     void compile();
+
+    const xt::xarray<T> train_batch(const xt::xarray<T>& x,
+                                    const xt::xarray<T>& y,
+                                    const uint           batch_id,
+                                    const uint           batch_size);
 
     void update_processing_layers() const;
 };
@@ -57,11 +56,10 @@ Model<T>::Model()
 }
 
 template <typename T>
-template <typename L>
-Model<T>& Model<T>::add_layer(L layer)
+Model<T>& Model<T>::add(const std::shared_ptr<Layer<T>>& layer)
 {
     compiled_ = false;
-    layers_.emplace_back(std::make_shared<L>(layer));
+    layers_.push_back(layer);
 
     return *this;
 }
@@ -88,22 +86,22 @@ void Model<T>::set_learning_rate(const double lr)
 }
 
 template <typename T>
-const xt::xarray<T> Model<T>::train_batch(std::vector<xt::xarray<T>>& x,
-                                          std::vector<xt::xarray<T>>& y,
-                                          const uint                  batch_id,
-                                          const uint batch_size)
+const xt::xarray<T> Model<T>::train_batch(const xt::xarray<T>& x,
+                                          const xt::xarray<T>& y,
+                                          const uint           batch_id,
+                                          const uint           batch_size)
 {
     xt::xarray<T> total_cost = 0;
 
     uint sample = batch_id * batch_size;
 
     // For each batch, compute delta weights and biases
-    for (uint k = 0; k < batch_size && sample < x.size(); k++)
+    for (uint k = 0; k < batch_size && sample < x.shape()[0]; k++)
     {
-        layers_[0]->feedforward(x[sample], true);
+        layers_[0]->feedforward(xt::view(x, sample), true);
 
         auto last_layer = layers_[layers_.size() - 1];
-        auto delta      = last_layer->cost(y[sample]);
+        auto delta      = last_layer->cost(xt::view(y, sample));
         total_cost      = xt::sum(delta);
 
         last_layer->backpropagation(delta);
@@ -118,15 +116,15 @@ const xt::xarray<T> Model<T>::train_batch(std::vector<xt::xarray<T>>& x,
 }
 
 template <typename T>
-void Model<T>::train(std::vector<xt::xarray<T>>& x,
-                     std::vector<xt::xarray<T>>& y,
-                     const uint                  batch_size,
-                     const uint                  epochs)
+void Model<T>::train(const xt::xarray<T>& x,
+                     const xt::xarray<T>& y,
+                     const uint           batch_size,
+                     const uint           epochs)
 {
     if (!compiled_)
         compile();
 
-    const uint batch_count = ceil(1.0f * x.size() / batch_size);
+    const uint batch_count = ceil(1.0f * x.shape()[0] / batch_size);
 
     for (uint epoch = 0; epoch < epochs; epoch++)
     {

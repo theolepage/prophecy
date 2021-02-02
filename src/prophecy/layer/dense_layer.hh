@@ -13,8 +13,9 @@ template <typename T = float>
 class DenseLayer final : public ProcessingLayer<T>
 {
   public:
-    explicit DenseLayer(const uint                   nb_neurons,
-                        const ActivationFunction<T>& activation);
+    explicit DenseLayer(
+        const uint                                    nb_neurons,
+        const std::shared_ptr<ActivationFunction<T>>& activation);
 
     virtual ~DenseLayer() = default;
 
@@ -26,8 +27,9 @@ class DenseLayer final : public ProcessingLayer<T>
 };
 
 template <typename T>
-DenseLayer<T>::DenseLayer(const uint                   nb_neurons,
-                          const ActivationFunction<T>& activation)
+DenseLayer<T>::DenseLayer(
+    const uint                                    nb_neurons,
+    const std::shared_ptr<ActivationFunction<T>>& activation)
     : ProcessingLayer<T>(nb_neurons, activation)
 {
 }
@@ -61,10 +63,9 @@ xt::xarray<T> DenseLayer<T>::feedforward(const xt::xarray<T>& input,
                                          const bool           training)
 {
     auto z = xt::linalg::dot(this->weights_, input);
-
     z += this->biases_;
 
-    auto f = xt::vectorize(this->activation_.get_f());
+    auto f = xt::vectorize(this->activation_->get_f());
     auto a = f(z);
 
     if (training)
@@ -83,7 +84,7 @@ void DenseLayer<T>::backpropagation(xt::xarray<T>& delta)
 {
     auto prev = this->prev_.lock();
 
-    auto fd = xt::vectorize(this->activation_.get_fd());
+    auto fd = xt::vectorize(this->activation_->get_fd());
 
     this->last_z_ = fd(this->last_z_);
     delta *= this->last_z_;

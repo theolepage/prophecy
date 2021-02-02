@@ -12,8 +12,9 @@ template <typename T = float>
 class ProcessingLayer : public Layer<T>
 {
   public:
-    explicit ProcessingLayer(const uint                   nb_neurons,
-                             const ActivationFunction<T>& activation);
+    explicit ProcessingLayer(
+        const uint                                    nb_neurons,
+        const std::shared_ptr<ActivationFunction<T>>& activation);
 
     virtual ~ProcessingLayer() = default;
 
@@ -28,12 +29,13 @@ class ProcessingLayer : public Layer<T>
     xt::xarray<T> delta_weights_;
     xt::xarray<T> delta_biases_;
 
-    const ActivationFunction<T>& activation_;
+    const std::shared_ptr<ActivationFunction<T>> activation_;
 };
 
 template <typename T>
-ProcessingLayer<T>::ProcessingLayer(const uint                   nb_neurons,
-                                    const ActivationFunction<T>& activation)
+ProcessingLayer<T>::ProcessingLayer(
+    const uint                                    nb_neurons,
+    const std::shared_ptr<ActivationFunction<T>>& activation)
     : Layer<T>()
     , nb_neurons_(nb_neurons)
     , activation_(activation)
