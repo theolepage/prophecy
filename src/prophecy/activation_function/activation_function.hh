@@ -47,7 +47,7 @@ const std::function<T(T)> LinearActivationFunction<T>::get_f() const
 template <typename T>
 const std::function<T(T)> LinearActivationFunction<T>::get_fd() const
 {
-    return [](const T x) { return 1; };
+    return [](const T) { return 1; };
 }
 
 template <typename T>
