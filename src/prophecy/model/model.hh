@@ -44,6 +44,12 @@ class Model
                                     const uint           batch_id,
                                     const uint           batch_size);
 
+    void print_progress(int           epoch,
+                        int           epochs,
+                        int           batch,
+                        int           batches,
+                        xt::xarray<T> cost);
+
     void update_processing_layers() const;
 };
 
@@ -131,10 +137,39 @@ void Model<T>::train(const xt::xarray<T>& x,
         xt::xarray<T> cost;
 
         for (uint batch_id = 0; batch_id < batch_count; batch_id++)
-            cost = train_batch(x, y, batch_id, batch_size);
-
-        std::cout << "Epoch " << epoch << " completed (loss: " << cost << ")\n";
+        {
+            cost += train_batch(x, y, batch_id, batch_size);
+            print_progress(epoch, epochs, batch_id, batch_count, cost);
+        }
     }
+
+    std::cout << std::endl;
+}
+
+template <typename T>
+void Model<T>::print_progress(int           epoch,
+                              int           epochs,
+                              int           batch,
+                              int           batches,
+                              xt::xarray<T> cost)
+{
+    epoch++;
+    batch++;
+
+    // Print epoch number and progress on training set
+    std::cout << "Epoch " << epoch << "/" << epochs << " - ";
+    std::cout << batch << "/" << batches << " [";
+
+    // Print progress bar
+    int progress = 30.0f * batch / batches;
+    for (int p = 0; p < progress; p++)
+        std::cout << (p == progress - 1 ? ">" : "=");
+    for (int p = 0; p < 30 - progress; p++)
+        std::cout << ".";
+    std::cout << "]";
+
+    // Print loss on training set
+    std::cout << " - loss: " << cost(0) << "\r" << std::flush;
 }
 
 template <typename T>
