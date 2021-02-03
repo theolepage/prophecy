@@ -70,6 +70,12 @@ struct py_model
         return model_.predict(input);
     }
 
+    xt::pyarray<model_type> evaluate(const xt::pyarray<model_type>& x,
+                                     const xt::pyarray<model_type>& y)
+    {
+        return model_.evaluate(x, y);
+    }
+
     void train(const xt::pyarray<model_type>& x,
                const xt::pyarray<model_type>& y,
                const uint                     batch_size,

@@ -23,6 +23,8 @@ class Model
 
     xt::xarray<T> predict(const xt::xarray<T>& input);
 
+    xt::xarray<T> evaluate(const xt::xarray<T>& x, const xt::xarray<T>& y);
+
     double get_learning_rate() const;
     void   set_learning_rate(const double lr);
 
@@ -50,7 +52,7 @@ class Model
                         int           epochs,
                         int           batch,
                         int           batches,
-                        xt::xarray<T> cost);
+                        xt::xarray<T> loss);
 
     void update_processing_layers() const;
 };
@@ -79,6 +81,27 @@ xt::xarray<T> Model<T>::predict(const xt::xarray<T>& input)
         compile();
 
     return layers_[0]->feedforward(input);
+}
+
+template <typename T>
+xt::xarray<T> Model<T>::evaluate(const xt::xarray<T>& x, const xt::xarray<T>& y)
+{
+    if (!compiled_)
+        compile();
+
+    xt::xarray<T> loss = 0;
+
+    for (uint i = 0; i < x.shape()[0]; i++)
+    {
+        layers_[0]->feedforward(xt::view(x, i));
+
+        auto last_layer = layers_[layers_.size() - 1];
+        auto delta      = last_layer->cost(xt::view(y, i));
+        loss += xt::sum(delta);
+    }
+
+    loss /= x.shape()[0];
+    return loss;
 }
 
 template <typename T>
@@ -155,18 +178,18 @@ const xt::xarray<T> Model<T>::train_batch(const xt::xarray<T>& x,
                                           const uint           batch_id,
                                           const uint           batch_size)
 {
-    xt::xarray<T> total_cost = 0;
+    xt::xarray<T> total_loss = 0;
 
     uint sample = batch_id * batch_size;
 
-    // For each batch, compute delta weights and biases
+    // For each sample, compute delta weights and biases
     for (uint k = 0; k < batch_size && sample < x.shape()[0]; k++)
     {
         layers_[0]->feedforward(xt::view(x, sample), true);
 
         auto last_layer = layers_[layers_.size() - 1];
         auto delta      = last_layer->cost(xt::view(y, sample));
-        total_cost      = xt::sum(delta);
+        total_loss += xt::sum(delta);
 
         last_layer->backpropagation(delta);
 
@@ -176,7 +199,8 @@ const xt::xarray<T> Model<T>::train_batch(const xt::xarray<T>& x,
     // At the end of batch, update weights_ and biases_
     update_processing_layers();
 
-    return total_cost;
+    total_loss /= batch_size;
+    return total_loss;
 }
 
 template <typename T>
@@ -190,14 +214,14 @@ void Model<T>::train(const xt::xarray<T>& x,
 
     const uint batch_count = ceil(1.0f * x.shape()[0] / batch_size);
 
+    std::cout << "Training:" << std::endl;
+
     for (uint epoch = 0; epoch < epochs; epoch++)
     {
-        xt::xarray<T> cost;
-
         for (uint batch_id = 0; batch_id < batch_count; batch_id++)
         {
-            cost += train_batch(x, y, batch_id, batch_size);
-            print_progress(epoch, epochs, batch_id, batch_count, cost);
+            xt::xarray<T> loss = train_batch(x, y, batch_id, batch_size);
+            print_progress(epoch, epochs, batch_id, batch_count, loss);
         }
     }
 
@@ -209,7 +233,7 @@ void Model<T>::print_progress(int           epoch,
                               int           epochs,
                               int           batch,
                               int           batches,
-                              xt::xarray<T> cost)
+                              xt::xarray<T> loss)
 {
     epoch++;
     batch++;
@@ -227,7 +251,7 @@ void Model<T>::print_progress(int           epoch,
     std::cout << "]";
 
     // Print loss on training set
-    std::cout << " - loss: " << cost(0) << "\r" << std::flush;
+    std::cout << " - loss: " << loss(0) << "\r" << std::flush;
 }
 
 template <typename T>
