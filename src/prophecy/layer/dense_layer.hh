@@ -51,7 +51,7 @@ void DenseLayer<T>::compile(std::weak_ptr<Layer<T>>   prev,
     this->delta_weights_            = xt::zeros<T>(w_shape);
 
     // Initialize biases and delta_biases
-    const std::vector<uint> b_shape = {this->nb_neurons_, 1};
+    const std::vector<uint> b_shape = {this->nb_neurons_};
     this->biases_                   = xt::random::randn<T>(b_shape, 0, 1);
     this->delta_biases_             = xt::zeros<T>(b_shape);
 
@@ -64,7 +64,7 @@ template <typename T>
 xt::xarray<T> DenseLayer<T>::feedforward(const xt::xarray<T>& input,
                                          const bool           training)
 {
-    auto z = xt::linalg::dot(this->weights_, input);
+    auto z = xt::linalg::dot(input, xt::transpose(this->weights_));
     z += this->biases_;
 
     auto f = xt::vectorize(this->activation_->get_f());
@@ -92,12 +92,12 @@ void DenseLayer<T>::backpropagation(xt::xarray<T>& delta)
     delta *= this->last_z_;
 
     // Compute db and dw
-    this->delta_biases_ += delta;
+    this->delta_biases_ += xt::sum(delta, 0);
     this->delta_weights_ +=
-        xt::linalg::dot(delta, xt::transpose(prev->get_last_a()));
+        xt::linalg::dot(xt::transpose(delta), prev->get_last_a());
 
     // Compute delta for previous layer and continue backpropagation
-    delta = xt::linalg::dot(xt::transpose(this->weights_), delta);
+    delta = xt::linalg::dot(delta, this->weights_);
     prev->backpropagation(delta);
 }
 

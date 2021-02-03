@@ -43,7 +43,7 @@ void InputLayer<T>::backpropagation(xt::xarray<T>&)
 template <typename T>
 std::string InputLayer<T>::get_name() const
 {
-    return "Input ABCDEFGHISJKLMNOPQRSTUVWXYZ";
+    return "Input";
 }
 
 template <typename T>

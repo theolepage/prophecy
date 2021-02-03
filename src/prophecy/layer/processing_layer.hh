@@ -18,7 +18,7 @@ class ProcessingLayer : public Layer<T>
 
     virtual ~ProcessingLayer() = default;
 
-    virtual void update(double learning_rate);
+    virtual void update(const double learning_rate, const uint batch_size);
 
     virtual uint get_params_count() const;
 
@@ -45,15 +45,14 @@ ProcessingLayer<T>::ProcessingLayer(
 }
 
 template <typename T>
-void ProcessingLayer<T>::update(double learning_rate)
+void ProcessingLayer<T>::update(const double learning_rate,
+                                const uint   batch_size)
 {
-    // Update weights_ and biases_
-    delta_weights_ *= learning_rate;
-    weights_ -= delta_weights_;
-    delta_biases_ *= learning_rate;
-    biases_ -= delta_biases_;
+    // Update weights and biases
+    weights_ -= (learning_rate / batch_size) * delta_weights_;
+    biases_ -= (learning_rate / batch_size) * delta_biases_;
 
-    // Reset delta_weights_ and delta_biases_
+    // Reset delta weights and delta biases
     delta_weights_ = xt::zeros<T>(weights_.shape());
     delta_biases_  = xt::zeros<T>(biases_.shape());
 }

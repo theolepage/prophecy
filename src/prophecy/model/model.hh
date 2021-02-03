@@ -45,7 +45,6 @@ class Model
 
     const xt::xarray<T> train_batch(const xt::xarray<T>& x,
                                     const xt::xarray<T>& y,
-                                    const uint           batch_id,
                                     const uint           batch_size);
 
     void print_progress(int           epoch,
@@ -54,7 +53,7 @@ class Model
                         int           batches,
                         xt::xarray<T> loss);
 
-    void update_processing_layers() const;
+    void update_processing_layers(const uint batch_size) const;
 };
 
 template <typename T>
@@ -175,31 +174,18 @@ void Model<T>::summary()
 template <typename T>
 const xt::xarray<T> Model<T>::train_batch(const xt::xarray<T>& x,
                                           const xt::xarray<T>& y,
-                                          const uint           batch_id,
                                           const uint           batch_size)
 {
-    xt::xarray<T> total_loss = 0;
+    // Backpropagation over layers
+    layers_[0]->feedforward(x, true);
+    auto delta = layers_[layers_.size() - 1]->cost(y);
+    layers_[layers_.size() - 1]->backpropagation(delta);
 
-    uint sample = batch_id * batch_size;
+    // At the end update weights and biases
+    update_processing_layers(batch_size);
 
-    // For each sample, compute delta weights and biases
-    for (uint k = 0; k < batch_size && sample < x.shape()[0]; k++)
-    {
-        layers_[0]->feedforward(xt::view(x, sample), true);
-
-        auto last_layer = layers_[layers_.size() - 1];
-        auto delta      = last_layer->cost(xt::view(y, sample));
-        total_loss += xt::sum(delta);
-
-        last_layer->backpropagation(delta);
-
-        sample++;
-    }
-
-    // At the end of batch, update weights_ and biases_
-    update_processing_layers();
-
-    total_loss /= batch_size;
+    // FIXME compute correctly loss
+    xt::xarray<T> total_loss = xt::sum(delta) / batch_size;
     return total_loss;
 }
 
@@ -218,10 +204,14 @@ void Model<T>::train(const xt::xarray<T>& x,
 
     for (uint epoch = 0; epoch < epochs; epoch++)
     {
-        for (uint batch_id = 0; batch_id < batch_count; batch_id++)
+        for (uint batch = 0; batch < batch_count; batch++)
         {
-            xt::xarray<T> loss = train_batch(x, y, batch_id, batch_size);
-            print_progress(epoch, epochs, batch_id, batch_count, loss);
+            auto rng = xt::range(batch * batch_size, (batch + 1) * batch_size);
+            xt::xarray<T> x_batch = xt::view(x, rng, xt::all());
+            xt::xarray<T> y_batch = xt::view(y, rng, xt::all());
+
+            xt::xarray<T> loss = train_batch(x_batch, y_batch, batch_size);
+            print_progress(epoch, epochs, batch, batch_count, loss);
         }
     }
 
@@ -276,14 +266,14 @@ void Model<T>::compile()
 }
 
 template <typename T>
-void Model<T>::update_processing_layers() const
+void Model<T>::update_processing_layers(const uint batch_size) const
 {
     for (uint layer_id = 1; layer_id < layers_.size(); layer_id++)
     {
         auto layer   = layers_[layer_id];
         auto p_layer = std::dynamic_pointer_cast<ProcessingLayer<T>>(layer);
         if (p_layer != nullptr)
-            p_layer->update(learning_rate_);
+            p_layer->update(learning_rate_, batch_size);
     }
 }
 } // namespace prophecy
