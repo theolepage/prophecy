@@ -24,6 +24,8 @@ class DenseLayer final : public ProcessingLayer<T>
     xt::xarray<T> feedforward(const xt::xarray<T>& input, const bool training);
 
     void backpropagation(xt::xarray<T>& delta);
+
+    std::string get_name() const;
 };
 
 template <typename T>
@@ -97,5 +99,11 @@ void DenseLayer<T>::backpropagation(xt::xarray<T>& delta)
     // Compute delta for previous layer and continue backpropagation
     delta = xt::linalg::dot(xt::transpose(this->weights_), delta);
     prev->backpropagation(delta);
+}
+
+template <typename T>
+std::string DenseLayer<T>::get_name() const
+{
+    return "Dense";
 }
 } // namespace prophecy

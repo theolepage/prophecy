@@ -22,6 +22,7 @@ PYBIND11_MODULE(prophecy, m)
         .def("predict", &py_model::predict)
         .def("train", &py_model::train)
         .def("add", &py_model::add)
+        .def("summary", &py_model::summary)
         .def("set_learning_rate", &py_model::set_learning_rate)
         .def("get_learning_rate", &py_model::get_learning_rate);
 

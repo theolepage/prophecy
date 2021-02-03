@@ -26,6 +26,8 @@ class Model
     double get_learning_rate() const;
     void   set_learning_rate(const double lr);
 
+    void summary();
+
     void train(const xt::xarray<T>& x,
                const xt::xarray<T>& y,
                const uint           batch_size,
@@ -89,6 +91,62 @@ template <typename T>
 void Model<T>::set_learning_rate(const double lr)
 {
     learning_rate_ = lr;
+}
+
+template <typename T>
+void Model<T>::summary()
+{
+    const uint name_length   = 12;
+    const uint shape_length  = 18;
+    const uint params_length = 10;
+    const uint total_length  = name_length + shape_length + params_length;
+
+    if (!compiled_)
+        compile();
+
+    uint total_params_count = 0;
+
+    // Print header
+    std::cout << "Model:" << std::endl;
+    std::cout << std::string(total_length, '_') << std::endl;
+    std::cout << "Layer" << std::string(name_length - 5, ' ');
+    std::cout << "Output shape" << std::string(shape_length - 12, ' ');
+    std::cout << "Param #" << std::string(params_length - 7, ' ');
+    std::cout << std::endl << std::string(total_length, '=') << std::endl;
+
+    for (uint i = 0; i < layers_.size(); i++)
+    {
+        // Print name
+        const std::string name = layers_[i]->get_name().substr(0, name_length);
+        std::cout << name << std::string(name_length - name.length() + 1, ' ');
+
+        // Print output shape
+        const std::vector<uint> shape = layers_[i]->get_out_shape();
+        std::string             shape_str;
+        shape_str.append("(");
+        for (uint j = 0; j < shape.size(); j++)
+        {
+            shape_str.append(std::to_string(shape.at(j)));
+            shape_str.append(((j == shape.size() - 1) ? "" : ", "));
+        }
+        shape_str.append(")");
+        shape_str = shape_str.substr(0, shape_length);
+        std::cout << shape_str
+                  << std::string(shape_length - shape_str.length() + 1, ' ');
+
+        // Print params count
+        const uint        params_count     = layers_[i]->get_params_count();
+        const std::string params_count_str = std::to_string(params_count);
+        std::cout << params_count_str.substr(0, params_length);
+        total_params_count += params_count;
+
+        std::cout << std::endl;
+    }
+
+    // Print footer
+    std::cout << std::string(total_length, '=') << std::endl;
+    std::cout << "Total params: " << total_params_count << std::endl;
+    std::cout << std::string(total_length, '_') << std::endl;
 }
 
 template <typename T>

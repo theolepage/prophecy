@@ -15,6 +15,9 @@ class InputLayer final : public Layer<T>
     xt::xarray<T> feedforward(const xt::xarray<T>& input, bool training);
 
     void backpropagation(xt::xarray<T>&);
+
+    std::string get_name() const;
+    uint        get_params_count() const;
 };
 
 template <typename T>
@@ -35,5 +38,17 @@ template <typename T>
 void InputLayer<T>::backpropagation(xt::xarray<T>&)
 {
     return;
+}
+
+template <typename T>
+std::string InputLayer<T>::get_name() const
+{
+    return "Input ABCDEFGHISJKLMNOPQRSTUVWXYZ";
+}
+
+template <typename T>
+uint InputLayer<T>::get_params_count() const
+{
+    return 0;
 }
 } // namespace prophecy

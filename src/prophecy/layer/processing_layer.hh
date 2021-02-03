@@ -20,6 +20,8 @@ class ProcessingLayer : public Layer<T>
 
     virtual void update(double learning_rate);
 
+    virtual uint get_params_count() const;
+
   protected:
     const uint nb_neurons_;
 
@@ -54,5 +56,11 @@ void ProcessingLayer<T>::update(double learning_rate)
     // Reset delta_weights_ and delta_biases_
     delta_weights_ = xt::zeros<T>(weights_.shape());
     delta_biases_  = xt::zeros<T>(biases_.shape());
+}
+
+template <typename T>
+uint ProcessingLayer<T>::get_params_count() const
+{
+    return this->weights_.size() + this->biases_.size();
 }
 } // namespace prophecy

@@ -25,6 +25,9 @@ class Layer
 
     virtual xt::xarray<T>& cost(const xt::xarray<T>& y);
 
+    virtual std::string get_name() const         = 0;
+    virtual uint        get_params_count() const = 0;
+
     std::vector<uint> get_out_shape() const;
     xt::xarray<T>&    get_last_a();
     xt::xarray<T>&    get_last_z();

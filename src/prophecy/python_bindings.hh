@@ -1,5 +1,8 @@
 #pragma once
 
+#include "pybind11/iostream.h"
+#include "pybind11/pybind11.h"
+
 #include "layer/dense_layer.hh"
 #include "model/model.hh"
 
@@ -72,7 +75,14 @@ struct py_model
                const uint                     batch_size,
                const uint                     epochs)
     {
+        pybind11::scoped_ostream_redirect stream();
         model_.train(x, y, batch_size, epochs);
+    }
+
+    void summary()
+    {
+        pybind11::scoped_ostream_redirect stream();
+        model_.summary();
     }
 
     double get_learning_rate() const { return model_.get_learning_rate(); }
