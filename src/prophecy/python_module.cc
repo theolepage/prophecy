@@ -30,7 +30,11 @@ PYBIND11_MODULE(prophecy, m)
     pybind11::class_<py_layers>(m, "ProphecyLayer");
     m.def_submodule("layers")
         .def("input", &py_layers::input)
-        .def("dense", &py_layers::dense);
+        .def("dense",
+             &py_layers::dense,
+             pybind11::arg("nb_neurons"),
+             pybind11::arg("activation"),
+             pybind11::arg("init") = "xavier");
 
     pybind11::class_<py_activations>(m, "ProphecyActivation");
     m.def_submodule("activations")

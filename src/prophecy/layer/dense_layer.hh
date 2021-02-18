@@ -15,7 +15,8 @@ class DenseLayer final : public ProcessingLayer<T>
   public:
     explicit DenseLayer(
         const uint                                    nb_neurons,
-        const std::shared_ptr<ActivationFunction<T>>& activation);
+        const std::shared_ptr<ActivationFunction<T>>& activation,
+        const std::string&                            init="xavier");
 
     virtual ~DenseLayer() = default;
 
@@ -26,13 +27,18 @@ class DenseLayer final : public ProcessingLayer<T>
     void backpropagation(xt::xarray<T>& delta);
 
     std::string get_name() const;
+
+  private:
+    std::string init_;
 };
 
 template <typename T>
 DenseLayer<T>::DenseLayer(
     const uint                                    nb_neurons,
-    const std::shared_ptr<ActivationFunction<T>>& activation)
+    const std::shared_ptr<ActivationFunction<T>>& activation,
+    const std::string&                            init)
     : ProcessingLayer<T>(nb_neurons, activation)
+    , init_(init)
 {
 }
 
@@ -47,13 +53,26 @@ void DenseLayer<T>::compile(std::weak_ptr<Layer<T>>   prev,
     // Initialize weights and delta_weights
     const std::vector<uint> w_shape = {this->nb_neurons_,
                                        prev.lock()->get_out_shape()[0]};
-    this->weights_                  = xt::random::randn<T>(w_shape, 0, 1);
-    this->delta_weights_            = xt::zeros<T>(w_shape);
+    if (init_ == "xavier")
+    {
+        const T weights_std =
+            sqrt(static_cast<T>(2) / (w_shape.front() + w_shape.back()));
+        this->weights_ = xt::random::randn<T>(w_shape, 0, weights_std);
+    }
+    else
+    {
+        this->weights_ = xt::random::randn<T>(w_shape, 0, 1);
+    }
+    this->delta_weights_ = xt::zeros<T>(w_shape);
 
     // Initialize biases and delta_biases
     const std::vector<uint> b_shape = {this->nb_neurons_};
-    this->biases_                   = xt::random::randn<T>(b_shape, 0, 1);
     this->delta_biases_             = xt::zeros<T>(b_shape);
+
+    if (init_ == "xavier")
+        this->biases_ = xt::zeros<T>(b_shape);
+    else
+        this->biases_ = xt::random::randn<T>(b_shape, 0, 1);
 
     this->compiled_ = true;
     this->prev_     = prev;

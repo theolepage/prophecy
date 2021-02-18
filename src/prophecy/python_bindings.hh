@@ -49,10 +49,12 @@ struct py_layers
         return py_layers(l);
     }
 
-    static py_layers dense(uint nb_neurons, py_activations activation)
+    static py_layers dense(uint               nb_neurons,
+                           py_activations     activation,
+                           const std::string& init = "xavier")
     {
-        auto l = std::make_shared<DenseLayer<model_type>>(nb_neurons,
-                                                          activation.ptr_);
+        auto l = std::make_shared<DenseLayer<model_type>>(
+            nb_neurons, activation.ptr_, init);
         return py_layers(l);
     }
 };
